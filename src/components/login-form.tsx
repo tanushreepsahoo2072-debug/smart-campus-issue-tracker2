@@ -5,54 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { getAuth, GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { FcGoogle } from 'react-icons/fc';
 
 export default function LoginForm() {
   const [role, setRole] = useState<'citizen' | 'authority'>('citizen');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
   const router = useRouter();
 
-  const handleGoogleSignIn = async () => {
+  const handleEnter = () => {
     setIsSubmitting(true);
-    const auth = getAuth();
-    const provider = new GoogleAuthProvider();
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      
-      // Force refresh of the token to get custom claims.
-      const idTokenResult = await user.getIdTokenResult(true);
-      const claims = idTokenResult.claims;
-
-      toast({
-        title: 'Signed in successfully!',
-        description: `Welcome, ${user.displayName || 'user'}!`,
-      });
-      
-      // Redirect based on custom claims, not the UI switch.
-      if (claims.role === 'authority') {
-        router.push('/authority/dashboard');
-      } else if (role === 'authority' && claims.role !== 'authority') {
-        router.push('/access-denied');
-      }
-      else {
-        router.push('/dashboard');
-      }
-
-    } catch (error: any) {
-      console.error('Google Sign-In Error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-        description: error.message || 'There was a problem with Google Sign-In.',
-      });
-    } finally {
-      setIsSubmitting(false);
+    if (role === 'authority') {
+      router.push('/authority/dashboard');
+    } else {
+      router.push('/dashboard');
     }
   };
 
@@ -77,9 +42,8 @@ export default function LoginForm() {
             Authority
           </Label>
         </div>
-        <Button onClick={handleGoogleSignIn} disabled={isSubmitting} className="w-full">
-          <FcGoogle className="mr-2 h-5 w-5" />
-          {isSubmitting ? 'Signing in...' : 'Sign in with Google'}
+        <Button onClick={handleEnter} disabled={isSubmitting} className="w-full">
+          {isSubmitting ? 'Entering...' : 'Enter'}
         </Button>
       </CardContent>
     </Card>
