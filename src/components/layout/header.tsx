@@ -7,7 +7,7 @@ import { useUser } from '@/firebase';
 import { getAuth, signOut } from 'firebase/auth';
 
 export default function Header() {
-  const { user, loading } = useUser();
+  const { user, claims, loading } = useUser();
   const auth = getAuth();
 
   const handleSignOut = async () => {
@@ -19,12 +19,18 @@ export default function Header() {
       console.error('Error signing out:', error);
     }
   };
+  
+  const getDashboardHref = () => {
+    if (!user) return "/";
+    if (claims?.role === 'authority') return "/authority/dashboard";
+    return "/dashboard";
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
-          <Link href={user ? "/dashboard" : "/"} className="mr-6 flex items-center space-x-2">
+          <Link href={getDashboardHref()} className="mr-6 flex items-center space-x-2">
             <Megaphone className="h-6 w-6 text-primary" />
             <span className="font-bold sm:inline-block">CivicConnect</span>
           </Link>
@@ -34,7 +40,7 @@ export default function Header() {
             (user ? (
               <>
                 <Button asChild variant="ghost">
-                  <Link href="/dashboard">
+                  <Link href={getDashboardHref()}>
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
                   </Link>
                 </Button>

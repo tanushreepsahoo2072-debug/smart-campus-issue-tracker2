@@ -7,26 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoaderCircle } from 'lucide-react';
 
 export default function AuthorityDashboardPage() {
-  const { user, loading } = useUser();
+  const { user, claims, loading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    // If not loading and no user, redirect to login
-    if (!loading && !user) {
-      router.push('/');
+    if (!loading) {
+      // If not loading and user is not an authority, redirect to citizen dashboard.
+      // If no user, redirect to login.
+      if (!user) {
+        router.push('/');
+      } else if (claims?.role !== 'authority') {
+        router.push('/dashboard');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, claims, loading, router]);
 
-  if (loading) {
+  if (loading || !user || claims?.role !== 'authority') {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (!user) {
-    return null; // or a login prompt
   }
 
   return (

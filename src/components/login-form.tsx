@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
 
@@ -22,17 +22,25 @@ export default function LoginForm() {
     const provider = new GoogleAuthProvider();
 
     try {
-      await signInWithPopup(auth, provider);
-      // On successful sign-in, redirect based on the selected role
-      if (role === 'citizen') {
-        router.push('/dashboard'); // Redirect to the citizen dashboard
-      } else {
-        router.push('/authority/dashboard'); // Redirect to the authority page
-      }
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Force refresh of the token to get custom claims.
+      const idTokenResult = await user.getIdTokenResult(true);
+      const claims = idTokenResult.claims;
+
       toast({
         title: 'Signed in successfully!',
-        description: `Welcome! You are logged in as a ${role}.`,
+        description: `Welcome, ${user.displayName || 'user'}!`,
       });
+      
+      // Redirect based on custom claims, not the UI switch.
+      if (claims.role === 'authority') {
+        router.push('/authority/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
+
     } catch (error: any) {
       console.error('Google Sign-In Error:', error);
       toast({
