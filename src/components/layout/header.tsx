@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Megaphone, LogIn, LogOut, LayoutDashboard } from 'lucide-react';
+import { Megaphone, LogOut, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 import { getAuth, signOut } from 'firebase/auth';
@@ -40,27 +40,20 @@ export default function Header() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {!loading &&
-            (user ? (
-              <>
-                {showDashboardButton && (
-                  <Button asChild variant="ghost">
-                    <Link href={getDashboardHref()}>
-                      <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-                    </Link>
-                  </Button>
-                )}
-                <Button onClick={handleSignOut} variant="ghost">
-                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
+          {!loading && user && (
+            <>
+              {showDashboardButton && (
+                <Button asChild variant="ghost">
+                  <Link href={getDashboardHref()}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                  </Link>
                 </Button>
-              </>
-            ) : (
-              <Button asChild>
-                <Link href="/">
-                  <LogIn className="mr-2 h-4 w-4" /> Login
-                </Link>
+              )}
+              <Button onClick={handleSignOut} variant="ghost">
+                <LogOut className="mr-2 h-4 w-4" /> Sign Out
               </Button>
-            ))}
+            </>
+          )}
         </div>
       </div>
     </header>
