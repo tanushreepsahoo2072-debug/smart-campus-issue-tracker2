@@ -16,14 +16,14 @@ export default function Header() {
     try {
       await signOut(auth);
       // Redirect the user to the login page after sign-out
-      window.location.href = '/login';
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
   
   const getDashboardHref = () => {
-    if (!user) return "/login";
+    if (!user) return "/";
     if (claims?.role === 'authority') return "/authority/dashboard";
     return "/dashboard";
   }
