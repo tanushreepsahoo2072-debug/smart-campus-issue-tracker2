@@ -35,7 +35,7 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  complaintImage: z.any().refine((files) => files?.length > 0, 'An attachment is required.'),
+  complaintImage: z.any().refine((files) => files?.length === 1, 'An attachment is required.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
