@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useUser } from '@/firebase';
 import { LoaderCircle, ServerCrash } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,14 +23,13 @@ type Complaint = {
 };
 
 export default function UserComplaints() {
-  const { user, loading: userLoading } = useUser();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'found' | 'not-found' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     // We will use a mock email for development since we are not logged in.
-    const userEmail = user?.email || 'citizen@example.com';
+    const userEmail = 'citizen@example.com';
 
     const fetchComplaints = async () => {
       setStatus('loading');
@@ -87,7 +85,7 @@ export default function UserComplaints() {
     };
 
     fetchComplaints();
-  }, [user]);
+  }, []);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -102,7 +100,7 @@ export default function UserComplaints() {
     }
   };
 
-  if (userLoading || status === 'loading') {
+  if (status === 'loading') {
     return (
       <div className="flex justify-center p-8">
         <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
