@@ -239,24 +239,22 @@ export default function ComplaintForm() {
                 render={() => (
                   <FormItem>
                     <FormLabel>Attachment</FormLabel>
-                    <FormControl>
-                       <div className="flex items-center gap-4">
-                         <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                           <Paperclip className="mr-2 h-4 w-4" />
-                           Add Attachment
-                         </Button>
-                         <Input
-                           type="file"
-                           accept="image/*"
-                           className="hidden"
-                           {...complaintImageRef}
-                           ref={fileInputRef}
-                         />
-                         {selectedFile?.[0] && (
-                          <span className="text-sm text-muted-foreground">{selectedFile[0].name}</span>
-                         )}
-                       </div>
-                    </FormControl>
+                    <div className="flex min-h-[40px] items-center gap-4">
+                      <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                        <Paperclip className="mr-2 h-4 w-4" />
+                        Add Attachment
+                      </Button>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        {...complaintImageRef}
+                        ref={fileInputRef}
+                      />
+                      {selectedFile?.[0] && (
+                        <span className="flex-1 text-sm text-muted-foreground">{selectedFile[0].name}</span>
+                      )}
+                    </div>
                     <FormDescription>Attach a photo of the issue.</FormDescription>
                     <FormMessage />
                   </FormItem>
