@@ -25,7 +25,7 @@ export default function LoginForm() {
       await signInWithPopup(auth, provider);
       // On successful sign-in, redirect based on the selected role
       if (role === 'citizen') {
-        router.push('/'); // Redirect to the main dashboard
+        router.push('/dashboard'); // Redirect to the citizen dashboard
       } else {
         router.push('/authority/dashboard'); // Redirect to the authority page
       }

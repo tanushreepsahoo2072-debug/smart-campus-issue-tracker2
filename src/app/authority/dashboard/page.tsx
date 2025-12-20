@@ -13,7 +13,7 @@ export default function AuthorityDashboardPage() {
   useEffect(() => {
     // If not loading and no user, redirect to login
     if (!loading && !user) {
-      router.push('/login');
+      router.push('/');
     }
   }, [user, loading, router]);
 
