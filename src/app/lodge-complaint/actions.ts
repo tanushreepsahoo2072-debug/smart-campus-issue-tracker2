@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 // IMPORTANT: Replace with your deployed Google Apps Script URL
-const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_y8j-a4q9pYx6aL4G2R3e1b7c8d9e0f1g2h3i4j5k6l7m8n9o0p/exec';
+const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2FRXSJu8WziHyuc7pDOtALFrRgRVyf0MC-vZiBxwMBN65CmRtEhVaKP0hACM60Zbkgg/exec';
 
 const formSchema = z.object({
   title: z.string(),
