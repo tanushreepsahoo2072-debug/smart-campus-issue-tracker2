@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FilePlus2, Search } from 'lucide-react';
+import UserComplaints from '@/components/user-complaints';
 
 export default function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col">
-      <section className="container flex flex-col items-center justify-center gap-6 py-8 md:py-12 lg:py-24">
+      <section className="container flex flex-col items-center justify-center gap-6 py-8 md:py-12">
         <div className="mx-auto flex flex-col items-center gap-4 text-center">
           <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:text-6xl">
             Citizen Dashboard
@@ -36,16 +37,19 @@ export default function DashboardPage() {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                   <Search className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-2xl font-bold">Track Status</CardTitle>
+                <CardTitle className="text-2xl font-bold">Your Complaints</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Check the status of a previously submitted complaint using your tracking PIN.
+                  Check the status of your previously submitted complaints.
                 </p>
               </CardContent>
             </Card>
           </Link>
         </div>
+      </section>
+      <section className="container pb-8">
+        <UserComplaints />
       </section>
     </div>
   );

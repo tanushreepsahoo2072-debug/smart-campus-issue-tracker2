@@ -37,7 +37,10 @@ export default function LoginForm() {
       // Redirect based on custom claims, not the UI switch.
       if (claims.role === 'authority') {
         router.push('/authority/dashboard');
-      } else {
+      } else if (role === 'authority' && claims.role !== 'authority') {
+        router.push('/access-denied');
+      }
+      else {
         router.push('/dashboard');
       }
 

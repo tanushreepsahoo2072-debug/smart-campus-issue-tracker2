@@ -1,15 +1,15 @@
-import TrackComplaint from '@/components/track-complaint';
+import UserComplaints from '@/components/user-complaints';
 
 export default function TrackStatusPage() {
   return (
-    <div className="container mx-auto max-w-3xl py-8">
+    <div className="container mx-auto max-w-4xl py-8">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Track Your Complaint</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Your Complaints</h1>
         <p className="mt-2 text-muted-foreground">
-          Enter your Tracking PIN below to see the current status of your issue.
+          Here are all the issues you have reported.
         </p>
       </div>
-      <TrackComplaint />
+      <UserComplaints />
     </div>
   );
 }
