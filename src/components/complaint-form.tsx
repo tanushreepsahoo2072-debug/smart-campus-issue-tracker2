@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,9 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { LoaderCircle, Mail, MapPin, PartyPopper } from 'lucide-react';
+import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +34,14 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
+  attachment: z
+    .any()
+    .refine((files) => files?.length === 1, 'An attachment is required.')
+    .refine((files) => files?.[0]?.size <= 5_000_000, 'Max file size is 5MB.')
+    .refine(
+      (files) => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(files?.[0]?.type),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    ),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -45,6 +52,7 @@ export default function ComplaintForm() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedIssueId, setSubmittedIssueId] = useState<string | null>(null);
+  const attachmentFileRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -53,8 +61,12 @@ export default function ComplaintForm() {
       description: '',
       location: '',
       email: '',
+      attachment: undefined,
     },
   });
+
+  const attachmentValue = form.watch('attachment');
+  const attachmentFileName = attachmentValue?.[0]?.name;
 
   const handleFetchLocation = () => {
     setIsFetchingLocation(true);
@@ -102,36 +114,28 @@ export default function ComplaintForm() {
     setIsSubmitting(true);
 
     try {
-      // Create a text string with the form data
-      const details = `
-Complaint Details
-=================
-Title: ${values.title}
-Description: ${values.description}
-Email: ${values.email}
-Location: ${values.location}
-      `.trim();
+      const file = values.attachment[0];
+      if (!file) {
+        throw new Error('No file selected.');
+      }
 
-      // Create a blob from the text
-      const blob = new Blob([details], { type: 'text/plain' });
-
-      // Create a temporary URL for the blob
-      const url = URL.createObjectURL(blob);
+      // Create a temporary URL for the file
+      const url = URL.createObjectURL(file);
 
       // Create a temporary anchor element and trigger download
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'complaint-details.txt';
+      a.download = file.name; // Use the original file name
       document.body.appendChild(a);
-a.click();
+      a.click();
       document.body.removeChild(a);
 
       // Clean up the temporary URL
       URL.revokeObjectURL(url);
 
       toast({
-        title: 'Test Data Generated',
-        description: 'A text file with the complaint details has been downloaded.',
+        title: 'Attachment Downloaded',
+        description: 'The selected image has been downloaded for testing.',
       });
 
       form.reset();
@@ -139,7 +143,7 @@ a.click();
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
         variant: 'destructive',
-        title: 'Generation Failed',
+        title: 'Download Failed',
         description: errorMessage,
       });
     } finally {
@@ -222,6 +226,40 @@ a.click();
                           {field.value}
                         </span>
                       )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="attachment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Attachment</FormLabel>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <Button
+                        type="button"
+                        onClick={() => attachmentFileRef.current?.click()}
+                      >
+                        <Paperclip className="mr-2 h-4 w-4" />
+                        Add Attachment
+                      </Button>
+                      {attachmentFileName && (
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {attachmentFileName}
+                        </span>
+                      )}
+                      <FormControl>
+                        <Input
+                          type="file"
+                          className="hidden"
+                          ref={attachmentFileRef}
+                          onChange={(e) => field.onChange(e.target.files)}
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                        />
+                      </FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>
