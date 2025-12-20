@@ -16,8 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef, useEffect } from 'react';
-import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
+import { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper } from 'lucide-react';
 import {
@@ -36,7 +35,7 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  complaintImage: z.any().refine((files) => files?.length === 1, 'An attachment is required.'),
+  complaintImage: z.any().refine((files) => files?.length > 0, 'An attachment is required.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
