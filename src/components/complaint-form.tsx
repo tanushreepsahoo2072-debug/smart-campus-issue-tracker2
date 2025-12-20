@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper } from 'lucide-react';
@@ -62,13 +62,6 @@ export default function ComplaintForm() {
       email: '',
     },
   });
-
-  // Set user email on component mount
-  useEffect(() => {
-    if (user?.email) {
-      form.setValue('email', user.email);
-    }
-  }, [form, user]);
 
   const complaintImageRef = form.register('complaintImage');
 
@@ -132,9 +125,6 @@ export default function ComplaintForm() {
         setSubmittedIssueId(result.issueId);
         setShowSuccessDialog(true);
         form.reset();
-        // After reset, re-populate the email
-        if (user?.email) form.setValue('email', user.email);
-
       } else {
         throw new Error(result.error || 'An unknown error occurred.');
       }
@@ -199,7 +189,7 @@ export default function ComplaintForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input {...field} readOnly className="pl-10 font-medium" />
+                        <Input placeholder="your.email@example.com" {...field} className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -261,7 +251,7 @@ export default function ComplaintForm() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Submitting...
