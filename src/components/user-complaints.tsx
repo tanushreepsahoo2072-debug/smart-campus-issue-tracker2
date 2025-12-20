@@ -30,13 +30,8 @@ export default function UserComplaints() {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    if (userLoading) {
-      return;
-    }
-    if (!user || !user.email) {
-      setStatus('idle');
-      return;
-    }
+    // We will use a mock email for development since we are not logged in.
+    const userEmail = user?.email || 'citizen@example.com';
 
     const fetchComplaints = async () => {
       setStatus('loading');
@@ -53,7 +48,7 @@ export default function UserComplaints() {
       }
 
       try {
-        const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?email=${user.email}`, {
+        const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?email=${userEmail}`, {
           method: 'GET',
           cache: 'no-store',
         });
@@ -92,7 +87,7 @@ export default function UserComplaints() {
     };
 
     fetchComplaints();
-  }, [user, userLoading]);
+  }, [user]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -115,15 +110,6 @@ export default function UserComplaints() {
     );
   }
   
-  if (!user) {
-     return (
-       <Alert>
-         <AlertTitle>Please Log In</AlertTitle>
-         <AlertDescription>You need to be logged in to view your complaints.</AlertDescription>
-       </Alert>
-     );
-  }
-
   if (status === 'error') {
     return (
       <Card className="rounded-2xl text-center shadow-md">
