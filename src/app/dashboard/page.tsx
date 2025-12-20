@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FilePlus2, Search } from 'lucide-react';
-import UserComplaints from '@/components/user-complaints';
 
 export default function DashboardPage() {
   return (
@@ -9,7 +8,7 @@ export default function DashboardPage() {
       <section className="container flex flex-col items-center justify-center gap-6 py-8 md:py-12">
         <div className="mx-auto flex flex-col items-center gap-4 text-center">
           <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:text-6xl">
-            Citizen Dashboard
+            Dashboard
           </h1>
           <p className="max-w-[750px] text-muted-foreground sm:text-xl">
             Your direct line to city services. Report issues and track their resolution.
@@ -47,9 +46,6 @@ export default function DashboardPage() {
             </Card>
           </Link>
         </div>
-      </section>
-      <section className="container pb-8">
-        <UserComplaints />
       </section>
     </div>
   );
