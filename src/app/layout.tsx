@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/layout/header';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'CivicConnect',
@@ -24,11 +25,13 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <div className="flex min-h-screen w-full flex-col">
-          <Header />
-          <main className="flex flex-1 flex-col">{children}</main>
-          <Toaster />
-        </div>
+        <FirebaseClientProvider>
+          <div className="flex min-h-screen w-full flex-col">
+            <Header />
+            <main className="flex flex-1 flex-col">{children}</main>
+            <Toaster />
+          </div>
+        </FirebaseClientProvider>
       </body>
     </html>
   );

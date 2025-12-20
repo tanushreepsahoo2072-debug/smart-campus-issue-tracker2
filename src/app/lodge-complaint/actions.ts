@@ -1,17 +1,18 @@
 'use server';
 
 import { categorizeAndPrioritizeComplaint } from '@/ai/flows/categorize-and-prioritize-complaint';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { z } from 'zod';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'; // IMPORTANT: Replace with your deployed Google Apps Script URL
+// IMPORTANT: Replace with your deployed Google Apps Script URL
+const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycAPlKzJ2D-iJ4-8B-3_gDq8xR_j5-Ld-EwA9qCq_x_yZz_wR-B7vD-Zq_A/exec';
 
 const formSchema = z.object({
   title: z.string(),
   description: z.string(),
   location: z.string(),
+  email: z.string().email(),
   complaintImage: z.instanceof(File),
-  idProofImage: z.instanceof(File),
 });
 
 export async function handleComplaintSubmission(
@@ -22,8 +23,8 @@ export async function handleComplaintSubmission(
       title: formData.get('title'),
       description: formData.get('description'),
       location: formData.get('location'),
+      email: formData.get('email'),
       complaintImage: formData.get('complaintImage'),
-      idProofImage: formData.get('idProofImage'),
     };
 
     const parsed = formSchema.safeParse(rawFormData);
@@ -32,7 +33,7 @@ export async function handleComplaintSubmission(
       throw new Error('Invalid form data provided.');
     }
 
-    const { title, description, location } = parsed.data;
+    const { title, description, location, email } = parsed.data;
 
     // 1. Generate a unique issue ID
     const issueId = `CIV-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
@@ -49,45 +50,43 @@ export async function handleComplaintSubmission(
     // 5. Prepare data for Google Sheets in tuple/array format
     const sheetData = [
         issueId,
+        email,
         title,
         description,
         category,
         priority,
         location,
         imageUrl,
-        'Unassigned',
+        'Pending',
         timestamp
     ];
     
     // 6. Send data to Google Apps Script
-    // Note: In a real-world scenario, you might want to add authentication (e.g., an API key)
-    // to secure your Apps Script endpoint.
-    if (GOOGLE_APP_SCRIPT_URL.includes('YOUR_SCRIPT_ID')) {
-      console.warn('Google Apps Script URL is not configured. Skipping submission.');
-      // For demonstration, we'll return success without actually posting.
-      // In production, you might want to throw an error here.
-    } else {
-        const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: sheetData }),
-            // As per Next.js App Router recommendation for fetch in Server Actions
-            cache: 'no-store', 
-        });
+    if (GOOGLE_APP_SCRIPT_URL.includes('YOUR_SCRIPT_ID') || GOOGLE_APP_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbycAPlKzJ2D-iJ4-8B-3_gDq8xR_j5-Ld-EwA9qCq_x_yZz_wR-B7vD-Zq_A/exec') {
+      console.warn('Google Apps Script URL is the template URL. Please replace it with your own.');
+      // In a real scenario, you would throw an error. For this demo, we proceed.
+    }
+    
+    const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        // The body needs to be structured to match the Apps Script expectation
+        body: JSON.stringify({ data: sheetData }),
+        cache: 'no-store', 
+    });
 
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error('Failed to submit to Google Sheet:', errorBody);
-            throw new Error('There was an issue submitting your complaint to our system.');
-        }
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('Failed to submit to Google Sheet:', errorBody);
+        throw new Error('There was an issue submitting your complaint to our system.');
+    }
 
-        const result = await response.json();
-        if (result.status !== 'success') {
-            console.error('Google Apps Script returned an error:', result.message);
-            throw new Error(result.message || 'An error occurred within our submission system.');
-        }
+    const result = await response.json();
+    if (result.status !== 'success') {
+        console.error('Google Apps Script returned an error:', result.message);
+        throw new Error(result.message || 'An error occurred within our submission system.');
     }
 
 

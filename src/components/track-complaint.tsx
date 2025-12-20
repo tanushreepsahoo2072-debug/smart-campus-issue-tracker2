@@ -18,53 +18,85 @@ const trackSchema = z.object({
 
 type TrackFormValues = z.infer<typeof trackSchema>;
 
-// Mock data for demonstration
-const mockComplaintData = {
-  'CIV-1720796400000-ABCDE': {
-    title: 'Large pothole on Main Street',
-    category: 'Road Maintenance',
-    priority: 'High',
-    status: 'In Progress',
-    submittedOn: '2024-07-12T15:00:00Z',
-    assignedTo: 'Public Works Department',
-    lastUpdate: '2024-07-13T09:30:00Z',
-    notes: 'A crew has been dispatched to assess the pothole. Expected repair within 48 hours.',
-  },
+// IMPORTANT: Replace with your deployed Google Apps Script URL
+const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycAPlKzJ2D-iJ4-8B-3_gDq8xR_j5-Ld-EwA9qCq_x_yZz_wR-B7vD-Zq_A/exec';
+
+type ComplaintStatus = {
+  title: string;
+  category: string;
+  priority: string;
+  status: string;
+  submittedOn: string;
+  assignedTo: string;
+  lastUpdate: string;
+  notes: string;
 };
 
-type ComplaintStatus = typeof mockComplaintData[keyof typeof mockComplaintData];
-
 export default function TrackComplaint() {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'found' | 'not-found'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'found' | 'not-found' | 'error'>('idle');
   const [complaint, setComplaint] = useState<ComplaintStatus | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const form = useForm<TrackFormValues>({
     resolver: zodResolver(trackSchema),
     defaultValues: { issueId: '' },
   });
 
-  const onSubmit = (data: TrackFormValues) => {
+  const onSubmit = async (data: TrackFormValues) => {
     setStatus('loading');
     setComplaint(null);
-    // Simulate API call
-    setTimeout(() => {
-      const result = mockComplaintData[data.issueId as keyof typeof mockComplaintData];
-      if (result) {
-        setComplaint(result);
+    setErrorMessage('');
+
+    if (GOOGLE_APP_SCRIPT_URL.includes('YOUR_SCRIPT_ID') || GOOGLE_APP_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbycAPlKzJ2D-iJ4-8B-3_gDq8xR_j5-Ld-EwA9qCq_x_yZz_wR-B7vD-Zq_A/exec') {
+      setStatus('error');
+      setErrorMessage('Google Apps Script URL is not configured. Tracking is disabled.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?issueId=${data.issueId}`, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        // Assuming the data is returned in a `data` property and is an object with keys matching ComplaintStatus
+        const complaintData = result.data;
+        setComplaint({
+          title: complaintData.Title,
+          category: complaintData.Category,
+          priority: complaintData.Priority,
+          status: complaintData.Status,
+          submittedOn: complaintData.Timestamp,
+          assignedTo: complaintData.AssignedTo || 'Unassigned',
+          lastUpdate: complaintData.Timestamp, // Placeholder, you might want another 'last updated' column
+          notes: complaintData.Notes || 'No notes yet.'
+        });
         setStatus('found');
       } else {
         setStatus('not-found');
       }
-    }, 1500);
+    } catch (error) {
+      console.error('Error tracking complaint:', error);
+      setStatus('error');
+      setErrorMessage('Failed to fetch complaint status. Please try again later.');
+    }
   };
 
+
   const getStatusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'in progress':
         return 'secondary';
       case 'resolved':
         return 'default';
-      case 'submitted':
+      case 'pending':
         return 'outline';
       default:
         return 'secondary';
@@ -111,16 +143,16 @@ export default function TrackComplaint() {
         </div>
       )}
 
-      {status === 'not-found' && (
+      {(status === 'not-found' || status === 'error') && (
         <Card className="rounded-2xl text-center shadow-md">
           <CardHeader>
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
               <ServerCrash className="h-6 w-6 text-destructive" />
             </div>
-            <CardTitle>Not Found</CardTitle>
+            <CardTitle>{status === 'not-found' ? 'Not Found' : 'Error'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>No complaint found with the provided Tracking PIN. Please check the PIN and try again.</p>
+            <p>{errorMessage || 'No complaint found with the provided Tracking PIN. Please check the PIN and try again.'}</p>
           </CardContent>
         </Card>
       )}

@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, LoaderCircle, MapPin, PartyPopper } from 'lucide-react';
+import { Camera, LoaderCircle, Mail, MapPin, PartyPopper } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,72 +30,26 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
+import { useUser } from '@/firebase'; // Import the useUser hook
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters.'),
   description: z.string().min(25, 'Description must be at least 25 characters.'),
   location: z.string().min(1, 'Could not get location. Please enable location services.'),
+  email: z.string().email('A valid email is required.'),
   complaintImage: z
     .instanceof(FileList)
-    .refine((files) => files?.length === 1, 'Complaint image is required.'),
-  idProofImage: z.instanceof(FileList).refine((files) => files?.length === 1, 'ID proof is required.'),
+    .refine((files) => files?.length === 1, 'A photo of the issue is required.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-function FileUploadField({
-  form,
-  name,
-  label,
-  description,
-}: {
-  form: any;
-  name: keyof FormValues;
-  label: string;
-  description: string;
-}) {
-  const [fileName, setFileName] = useState<string | null>(null);
-  const fileRef = form.register(name);
-
-  return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={() => (
-        <FormItem>
-          <FormLabel>{label}</FormLabel>
-          <FormControl>
-            <div className="relative">
-              <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
-                <Camera className="mr-2 h-4 w-4" />
-                {fileName || 'Click to open camera'}
-              </Button>
-              <Input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-                {...fileRef}
-                onChange={(e) => {
-                  fileRef.onChange(e);
-                  setFileName(e.target.files?.[0]?.name || null);
-                }}
-              />
-            </div>
-          </FormControl>
-          <FormDescription>{description}</FormDescription>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
 
 export default function ComplaintForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedIssueId, setSubmittedIssueId] = useState<string | null>(null);
+  const { user } = useUser(); // Get the authenticated user
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -103,10 +57,16 @@ export default function ComplaintForm() {
       title: '',
       description: '',
       location: '',
+      email: '',
     },
   });
 
+  // Set user email and fetch location on component mount
   useEffect(() => {
+    if (user?.email) {
+      form.setValue('email', user.email);
+    }
+
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -137,18 +97,20 @@ export default function ComplaintForm() {
         description: 'Geolocation is not supported by your browser.',
       });
     }
-  }, [form, toast]);
-
+  }, [form, toast, user]);
+  
+  const complaintImageRef = form.register('complaintImage');
+  
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     const formData = new FormData();
-    Object.keys(values).forEach((key) => {
-      if (key === 'complaintImage' || key === 'idProofImage') {
-        formData.append(key, values[key][0]);
-      } else {
-        formData.append(key, values[key as keyof Omit<FormValues, 'complaintImage' | 'idProofImage'>]);
-      }
-    });
+    formData.append('title', values.title);
+    formData.append('description', values.description);
+    formData.append('location', values.location);
+    formData.append('email', values.email);
+    if (values.complaintImage && values.complaintImage.length > 0) {
+      formData.append('complaintImage', values.complaintImage[0]);
+    }
 
     try {
       const result = await handleComplaintSubmission(formData);
@@ -157,6 +119,9 @@ export default function ComplaintForm() {
         setSubmittedIssueId(result.issueId);
         setShowSuccessDialog(true);
         form.reset();
+        // After reset, re-populate the email and location
+        if (user?.email) form.setValue('email', user.email);
+
       } else {
         throw new Error(result.error || 'An unknown error occurred.');
       }
@@ -209,6 +174,23 @@ export default function ComplaintForm() {
                   </FormItem>
                 )}
               />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input {...field} readOnly className="pl-10 font-medium" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -227,21 +209,34 @@ export default function ComplaintForm() {
                 )}
               />
 
-              <FileUploadField
-                form={form}
+              <FormField
+                control={form.control}
                 name="complaintImage"
-                label="Complaint Image"
-                description="Use your camera to take a photo of the issue."
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Capture Issue Photo</FormLabel>
+                    <FormControl>
+                       <div className="relative">
+                         <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
+                           <Camera className="mr-2 h-4 w-4" />
+                           {form.watch('complaintImage')?.[0]?.name || 'Click to open camera'}
+                         </Button>
+                         <Input
+                           type="file"
+                           accept="image/*"
+                           capture="environment"
+                           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                           {...complaintImageRef}
+                         />
+                       </div>
+                    </FormControl>
+                    <FormDescription>Use your camera to take a photo of the issue.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
 
-              <FileUploadField
-                form={form}
-                name="idProofImage"
-                label="ID Proof"
-                description="Use your camera to take a photo of your ID for verification."
-              />
-
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Submitting...
