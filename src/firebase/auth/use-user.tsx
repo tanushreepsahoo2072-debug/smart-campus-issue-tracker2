@@ -27,7 +27,7 @@ export const useUser = (): UserState => {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const idTokenResult = await user.getIdTokenResult();
+        const idTokenResult = await user.getIdTokenResult(true); // Force refresh
         setUserState({ user, claims: idTokenResult.claims, loading: false });
       } else {
         setUserState({ user: null, claims: null, loading: false });
