@@ -36,10 +36,10 @@ const formSchema = z.object({
   email: z.string().email('A valid email is required.'),
   attachment: z
     .any()
-    .refine((files) => files?.length === 1, 'An attachment is required.')
-    .refine((files) => files?.[0]?.size <= 5_000_000, 'Max file size is 5MB.')
+    .refine((files) => files?.length > 0, 'At least one attachment is required.')
+    .refine((files) => Array.from(files).every((file: any) => file?.size <= 5_000_000), 'Max file size is 5MB per file.')
     .refine(
-      (files) => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(files?.[0]?.type),
+      (files) => Array.from(files).every((file: any) => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file?.type)),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
 });
@@ -66,7 +66,9 @@ export default function ComplaintForm() {
   });
 
   const attachmentValue = form.watch('attachment');
-  const attachmentFileName = attachmentValue?.[0]?.name;
+  const attachmentFileNames = attachmentValue && attachmentValue.length > 0 
+    ? Array.from(attachmentValue).map((file: any) => file.name).join(', ')
+    : null;
 
   const handleFetchLocation = () => {
     setIsFetchingLocation(true);
@@ -114,28 +116,30 @@ export default function ComplaintForm() {
     setIsSubmitting(true);
 
     try {
-      const file = values.attachment[0];
-      if (!file) {
-        throw new Error('No file selected.');
+      const files = values.attachment;
+      if (!files || files.length === 0) {
+        throw new Error('No files selected.');
       }
 
-      // Create a temporary URL for the file
-      const url = URL.createObjectURL(file);
+      for (const file of Array.from(files as FileList)) {
+        // Create a temporary URL for the file
+        const url = URL.createObjectURL(file);
 
-      // Create a temporary anchor element and trigger download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name; // Use the original file name
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+        // Create a temporary anchor element and trigger download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name; // Use the original file name
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
 
-      // Clean up the temporary URL
-      URL.revokeObjectURL(url);
-
+        // Clean up the temporary URL
+        URL.revokeObjectURL(url);
+      }
+      
       toast({
-        title: 'Attachment Downloaded',
-        description: 'The selected image has been downloaded for testing.',
+        title: 'Attachments Downloaded',
+        description: 'The selected images have been downloaded for testing.',
       });
 
       form.reset();
@@ -238,28 +242,31 @@ export default function ComplaintForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Attachment</FormLabel>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <Button
-                        type="button"
-                        onClick={() => attachmentFileRef.current?.click()}
-                      >
-                        <Paperclip className="mr-2 h-4 w-4" />
-                        Add Attachment
-                      </Button>
-                      {attachmentFileName && (
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {attachmentFileName}
-                        </span>
-                      )}
-                      <FormControl>
-                        <Input
-                          type="file"
-                          className="hidden"
-                          ref={attachmentFileRef}
-                          onChange={(e) => field.onChange(e.target.files)}
-                          accept="image/png, image/jpeg, image/jpg, image/webp"
-                        />
-                      </FormControl>
+                     <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-4">
+                          <Button
+                            type="button"
+                            onClick={() => attachmentFileRef.current?.click()}
+                          >
+                            <Paperclip className="mr-2 h-4 w-4" />
+                            Add Attachment
+                          </Button>
+                          <FormControl>
+                            <Input
+                              type="file"
+                              className="hidden"
+                              ref={attachmentFileRef}
+                              onChange={(e) => field.onChange(e.target.files)}
+                              accept="image/png, image/jpeg, image/jpg, image/webp"
+                              multiple
+                            />
+                          </FormControl>
+                        </div>
+                        {attachmentFileNames && (
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {attachmentFileNames}
+                            </span>
+                          )}
                     </div>
                     <FormMessage />
                   </FormItem>
