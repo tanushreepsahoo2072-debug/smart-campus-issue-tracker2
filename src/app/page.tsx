@@ -4,7 +4,6 @@ import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { LoaderCircle } from 'lucide-react';
-import LoginForm from '@/components/login-form';
 
 export default function HomePage() {
   const { user, claims, loading } = useUser();
@@ -18,21 +17,15 @@ export default function HomePage() {
         } else {
           router.replace('/dashboard');
         }
+      } else {
+        router.replace('/login');
       }
     }
   }, [user, claims, loading, router]);
 
-  if (loading || user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto flex h-[calc(100vh-10rem)] items-center justify-center py-8">
-      <LoginForm />
+    <div className="flex h-screen items-center justify-center">
+      <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
 }

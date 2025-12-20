@@ -15,15 +15,15 @@ export default function Header() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      // Redirect the user to the login page (which is now the home page) after sign-out
-      window.location.href = '/';
+      // Redirect the user to the login page after sign-out
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
   
   const getDashboardHref = () => {
-    if (!user) return "/";
+    if (!user) return "/login";
     if (claims?.role === 'authority') return "/authority/dashboard";
     return "/dashboard";
   }
