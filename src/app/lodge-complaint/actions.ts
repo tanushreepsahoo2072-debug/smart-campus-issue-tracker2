@@ -2,7 +2,6 @@
 
 import { categorizeAndPrioritizeComplaint } from '@/ai/flows/categorize-and-prioritize-complaint';
 import { z } from 'zod';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 // IMPORTANT: Replace with your deployed Google Apps Script URL
 const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2FRXSJu8WziHyuc7pDOtALFrRgRVyf0MC-vZiBxwMBN65CmRtEhVaKP0hACM60Zbkgg/exec';
@@ -12,7 +11,6 @@ const formSchema = z.object({
   description: z.string().min(1, "Description is required."),
   location: z.string().min(1, "Location is required."),
   email: z.string().email(),
-  complaintImage: z.instanceof(File).refine(file => file.size > 0, "An attachment is required."),
 });
 
 export async function handleComplaintSubmission(
@@ -24,7 +22,6 @@ export async function handleComplaintSubmission(
       description: formData.get('description'),
       location: formData.get('location'),
       email: formData.get('email'),
-      complaintImage: formData.get('complaintImage'),
     };
 
     const parsed = formSchema.safeParse(rawFormData);
@@ -43,8 +40,8 @@ export async function handleComplaintSubmission(
     // 2. Call GenAI flow for categorization and prioritization
     const { category, priority } = await categorizeAndPrioritizeComplaint({ description });
 
-    // 3. Simulate image upload and get URL (using placeholder)
-    const imageUrl = PlaceHolderImages.find(p => p.id === 'complaint-image-placeholder')?.imageUrl || '';
+    // 3. Set a dummy image URL
+    const imageUrl = 'N/A';
 
     // 4. Get current timestamp
     const timestamp = new Date().toISOString();

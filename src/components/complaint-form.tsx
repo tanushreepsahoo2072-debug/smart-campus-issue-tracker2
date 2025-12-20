@@ -16,9 +16,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper } from 'lucide-react';
+import { LoaderCircle, Mail, MapPin, PartyPopper } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,9 +35,6 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  complaintImage: z.any().refine(value => value instanceof FileList && value.length > 0, {
-    message: 'An attachment is required.',
-  }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,7 +45,6 @@ export default function ComplaintForm() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedIssueId, setSubmittedIssueId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -57,11 +53,8 @@ export default function ComplaintForm() {
       description: '',
       location: '',
       email: '',
-      complaintImage: undefined,
     },
   });
-
-  const complaintImageRef = form.register('complaintImage');
 
   const handleFetchLocation = () => {
     setIsFetchingLocation(true);
@@ -109,7 +102,6 @@ export default function ComplaintForm() {
     setIsSubmitting(true);
 
     try {
-      const complaintFile = values.complaintImage[0];
       // Create a text string with the form data
       const details = `
 Complaint Details
@@ -118,7 +110,6 @@ Title: ${values.title}
 Description: ${values.description}
 Email: ${values.email}
 Location: ${values.location}
-Attachment: ${complaintFile?.name || 'N/A'}
       `.trim();
 
       // Create a blob from the text
@@ -132,7 +123,7 @@ Attachment: ${complaintFile?.name || 'N/A'}
       a.href = url;
       a.download = 'complaint-details.txt';
       document.body.appendChild(a);
-      a.click();
+a.click();
       document.body.removeChild(a);
 
       // Clean up the temporary URL
@@ -155,8 +146,6 @@ Attachment: ${complaintFile?.name || 'N/A'}
       setIsSubmitting(false);
     }
   }
-
-  const selectedFile = form.watch('complaintImage');
 
   return (
     <>
@@ -234,34 +223,6 @@ Attachment: ${complaintFile?.name || 'N/A'}
                         </span>
                       )}
                     </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="complaintImage"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Attachment</FormLabel>
-                    <div className="flex min-h-[40px] flex-wrap items-center gap-4">
-                      <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                        <Paperclip className="mr-2 h-4 w-4" />
-                        Add Attachment
-                      </Button>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        {...complaintImageRef}
-                        ref={fileInputRef}
-                      />
-                      {selectedFile?.[0] && (
-                        <span className="flex-1 text-sm text-muted-foreground">{selectedFile[0].name}</span>
-                      )}
-                    </div>
-                    <FormDescription>Attach a photo of the issue.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
