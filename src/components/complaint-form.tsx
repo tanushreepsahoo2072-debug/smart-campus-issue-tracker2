@@ -58,6 +58,7 @@ export default function ComplaintForm() {
       description: '',
       location: '',
       email: '',
+      complaintImage: undefined,
     },
   });
 
@@ -107,30 +108,48 @@ export default function ComplaintForm() {
   
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append('title', values.title);
-    formData.append('description', values.description);
-    formData.append('location', values.location);
-    formData.append('email', values.email);
-    if (values.complaintImage && values.complaintImage.length > 0) {
-      formData.append('complaintImage', values.complaintImage[0]);
-    }
 
     try {
-      const result = await handleComplaintSubmission(formData);
+      // Create a text string with the form data
+      const details = `
+Complaint Details
+=================
+Title: ${values.title}
+Description: ${values.description}
+Email: ${values.email}
+Location: ${values.location}
+Attachment: ${values.complaintImage[0]?.name || 'N/A'}
+      `.trim();
 
-      if (result.success && result.issueId) {
-        setSubmittedIssueId(result.issueId);
-        setShowSuccessDialog(true);
-        form.reset();
-      } else {
-        throw new Error(result.error || 'An unknown error occurred.');
-      }
+      // Create a blob from the text
+      const blob = new Blob([details], { type: 'text/plain' });
+
+      // Create a temporary URL for the blob
+      const url = URL.createObjectURL(blob);
+
+      // Create a temporary anchor element and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'complaint-details.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Clean up the temporary URL
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Test Data Generated",
+        description: "A text file with the complaint details has been downloaded.",
+      });
+
+      form.reset();
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
         variant: 'destructive',
-        title: 'Submission Failed',
+        title: 'Generation Failed',
         description: errorMessage,
       });
     } finally {
