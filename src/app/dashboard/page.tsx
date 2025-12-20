@@ -11,7 +11,7 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="max-w-[750px] text-muted-foreground sm:text-xl">
-            Your direct line to city services. Report issues and track their resolution.
+            Your direct line to campus services. Report issues and track their resolution.
           </p>
         </div>
         <div className="grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
