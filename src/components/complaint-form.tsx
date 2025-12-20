@@ -16,10 +16,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, LoaderCircle, Mail, MapPin, PartyPopper } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,13 +33,13 @@ import Link from 'next/link';
 import { useUser } from '@/firebase'; // Import the useUser hook
 
 const formSchema = z.object({
-  title: z.string().min(10, 'Title must be at least 10 characters.'),
-  description: z.string().min(25, 'Description must be at least 25 characters.'),
-  location: z.string().min(1, 'Could not get location. Please enable location services.'),
+  title: z.string().min(1, 'Title is required.'),
+  description: z.string().min(1, 'Description is required.'),
+  location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
   complaintImage: z
     .instanceof(FileList)
-    .refine((files) => files?.length === 1, 'A photo of the issue is required.'),
+    .refine((files) => files?.length === 1, 'An attachment is required.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -47,9 +47,11 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ComplaintForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedIssueId, setSubmittedIssueId] = useState<string | null>(null);
   const { user } = useUser(); // Get the authenticated user
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -61,29 +63,41 @@ export default function ComplaintForm() {
     },
   });
 
-  // Set user email and fetch location on component mount
+  // Set user email on component mount
   useEffect(() => {
     if (user?.email) {
       form.setValue('email', user.email);
     }
+  }, [form, user]);
 
+  const complaintImageRef = form.register('complaintImage');
+
+  const handleFetchLocation = () => {
+    setIsFetchingLocation(true);
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          form.setValue('location', `${latitude}, ${longitude}`);
+          const locationString = `${latitude}, ${longitude}`;
+          form.setValue('location', locationString, { shouldValidate: true });
+          setIsFetchingLocation(false);
+          toast({
+            title: 'Location Fetched',
+            description: `Coordinates: ${locationString}`,
+          });
         },
         (error) => {
           console.error(error);
           form.setError('location', {
             type: 'manual',
-            message: 'Could not get location. Please enable location services and refresh.',
+            message: 'Could not get location. Please enable location services.',
           });
           toast({
             variant: 'destructive',
             title: 'Location Error',
             description: 'Could not get location. Please enable location services in your browser.',
           });
+          setIsFetchingLocation(false);
         }
       );
     } else {
@@ -96,10 +110,9 @@ export default function ComplaintForm() {
         title: 'Location Error',
         description: 'Geolocation is not supported by your browser.',
       });
+      setIsFetchingLocation(false);
     }
-  }, [form, toast, user]);
-  
-  const complaintImageRef = form.register('complaintImage');
+  };
   
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
@@ -119,7 +132,7 @@ export default function ComplaintForm() {
         setSubmittedIssueId(result.issueId);
         setShowSuccessDialog(true);
         form.reset();
-        // After reset, re-populate the email and location
+        // After reset, re-populate the email
         if (user?.email) form.setValue('email', user.email);
 
       } else {
@@ -136,6 +149,8 @@ export default function ComplaintForm() {
       setIsSubmitting(false);
     }
   }
+
+  const selectedFile = form.watch('complaintImage');
 
   return (
     <>
@@ -195,15 +210,24 @@ export default function ComplaintForm() {
               <FormField
                 control={form.control}
                 name="location"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>GPS Location</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="Fetching location..." {...field} readOnly className="pl-10" />
-                      </div>
-                    </FormControl>
+                    <div className="flex items-center gap-4">
+                      <Button type="button" onClick={handleFetchLocation} disabled={isFetchingLocation}>
+                        {isFetchingLocation ? (
+                           <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                           <MapPin className="mr-2 h-4 w-4" />
+                        )}
+                        Fetch Location
+                      </Button>
+                      {form.getValues('location') && (
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {form.getValues('location')}
+                        </span>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -214,23 +238,26 @@ export default function ComplaintForm() {
                 name="complaintImage"
                 render={() => (
                   <FormItem>
-                    <FormLabel>Capture Issue Photo</FormLabel>
+                    <FormLabel>Attachment</FormLabel>
                     <FormControl>
-                       <div className="relative">
-                         <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
-                           <Camera className="mr-2 h-4 w-4" />
-                           {form.watch('complaintImage')?.[0]?.name || 'Click to open camera'}
+                       <div className="flex items-center gap-4">
+                         <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                           <Paperclip className="mr-2 h-4 w-4" />
+                           Add Attachment
                          </Button>
                          <Input
                            type="file"
                            accept="image/*"
-                           capture="environment"
-                           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                           className="hidden"
                            {...complaintImageRef}
+                           ref={fileInputRef}
                          />
+                         {selectedFile?.[0] && (
+                          <span className="text-sm text-muted-foreground">{selectedFile[0].name}</span>
+                         )}
                        </div>
                     </FormControl>
-                    <FormDescription>Use your camera to take a photo of the issue.</FormDescription>
+                    <FormDescription>Attach a photo of the issue.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

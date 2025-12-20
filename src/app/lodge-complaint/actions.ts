@@ -8,9 +8,9 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2FRXSJu8WziHyuc7pDOtALFrRgRVyf0MC-vZiBxwMBN65CmRtEhVaKP0hACM60Zbkgg/exec';
 
 const formSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  location: z.string(),
+  title: z.string().min(1, "Title is required."),
+  description: z.string().min(1, "Description is required."),
+  location: z.string().min(1, "Location is required."),
   email: z.string().email(),
   complaintImage: z.instanceof(File),
 });
@@ -30,7 +30,9 @@ export async function handleComplaintSubmission(
     const parsed = formSchema.safeParse(rawFormData);
     if (!parsed.success) {
       console.error('Form validation failed:', parsed.error.flatten().fieldErrors);
-      throw new Error('Invalid form data provided.');
+      // Construct a user-friendly error message
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0] || 'Invalid form data provided.';
+      throw new Error(firstError);
     }
 
     const { title, description, location, email } = parsed.data;
