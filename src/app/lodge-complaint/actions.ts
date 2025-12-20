@@ -12,7 +12,7 @@ const formSchema = z.object({
   description: z.string().min(1, "Description is required."),
   location: z.string().min(1, "Location is required."),
   email: z.string().email(),
-  complaintImage: z.instanceof(File),
+  complaintImage: z.instanceof(File).refine(file => file.size > 0, "An attachment is required."),
 });
 
 export async function handleComplaintSubmission(

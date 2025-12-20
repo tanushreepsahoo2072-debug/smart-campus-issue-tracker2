@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper } from 'lucide-react';
@@ -30,7 +30,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
-import { useUser } from '@/firebase'; // Import the useUser hook
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
@@ -50,7 +49,6 @@ export default function ComplaintForm() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedIssueId, setSubmittedIssueId] = useState<string | null>(null);
-  const { user } = useUser(); // Get the authenticated user
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
