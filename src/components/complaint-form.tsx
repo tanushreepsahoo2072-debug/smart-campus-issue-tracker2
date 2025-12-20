@@ -36,9 +36,7 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  complaintImage: z
-    .instanceof(FileList)
-    .refine((files) => files?.length === 1, 'An attachment is required.'),
+  complaintImage: z.any().refine((files) => files?.length === 1, 'An attachment is required.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -105,11 +103,12 @@ export default function ComplaintForm() {
       setIsFetchingLocation(false);
     }
   };
-  
+
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
 
     try {
+      const complaintFile = values.complaintImage[0];
       // Create a text string with the form data
       const details = `
 Complaint Details
@@ -118,7 +117,7 @@ Title: ${values.title}
 Description: ${values.description}
 Email: ${values.email}
 Location: ${values.location}
-Attachment: ${values.complaintImage[0]?.name || 'N/A'}
+Attachment: ${complaintFile?.name || 'N/A'}
       `.trim();
 
       // Create a blob from the text
@@ -137,14 +136,13 @@ Attachment: ${values.complaintImage[0]?.name || 'N/A'}
 
       // Clean up the temporary URL
       URL.revokeObjectURL(url);
-      
+
       toast({
-        title: "Test Data Generated",
-        description: "A text file with the complaint details has been downloaded.",
+        title: 'Test Data Generated',
+        description: 'A text file with the complaint details has been downloaded.',
       });
 
       form.reset();
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
@@ -196,7 +194,7 @@ Attachment: ${values.complaintImage[0]?.name || 'N/A'}
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="email"
@@ -217,21 +215,21 @@ Attachment: ${values.complaintImage[0]?.name || 'N/A'}
               <FormField
                 control={form.control}
                 name="location"
-                render={() => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>GPS Location</FormLabel>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
                       <Button type="button" onClick={handleFetchLocation} disabled={isFetchingLocation}>
                         {isFetchingLocation ? (
-                           <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                           <MapPin className="mr-2 h-4 w-4" />
+                          <MapPin className="mr-2 h-4 w-4" />
                         )}
                         Fetch Location
                       </Button>
-                      {form.getValues('location') && (
+                      {field.value && (
                         <span className="text-sm font-medium text-muted-foreground">
-                          {form.getValues('location')}
+                          {field.value}
                         </span>
                       )}
                     </div>
@@ -246,7 +244,7 @@ Attachment: ${values.complaintImage[0]?.name || 'N/A'}
                 render={() => (
                   <FormItem>
                     <FormLabel>Attachment</FormLabel>
-                    <div className="flex min-h-[40px] items-center gap-4">
+                    <div className="flex min-h-[40px] flex-wrap items-center gap-4">
                       <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
                         <Paperclip className="mr-2 h-4 w-4" />
                         Add Attachment
