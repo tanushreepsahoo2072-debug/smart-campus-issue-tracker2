@@ -15,7 +15,7 @@ export default function AuthorityDashboardPage() {
       // If not loading and user is not an authority, redirect to citizen dashboard.
       // If no user, redirect to login.
       if (!user) {
-        router.push('/login');
+        router.push('/');
       } else if (claims?.role !== 'authority') {
         router.push('/dashboard');
       }

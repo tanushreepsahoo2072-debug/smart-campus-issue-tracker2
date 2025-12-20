@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Megaphone, LogOut, LayoutDashboard, LogIn } from 'lucide-react';
+import { Megaphone, LogOut, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 import { getAuth, signOut } from 'firebase/auth';
@@ -16,14 +16,14 @@ export default function Header() {
     try {
       await signOut(auth);
       // Redirect the user to the login page after sign-out
-      window.location.href = '/login';
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
   
   const getDashboardHref = () => {
-    if (!user) return "/login";
+    if (!user) return "/";
     if (claims?.role === 'authority') return "/authority/dashboard";
     return "/dashboard";
   }
@@ -40,13 +40,6 @@ export default function Header() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {!loading && !user && pathname !== '/login' && (
-             <Button asChild variant="ghost">
-               <Link href="/login">
-                 <LogIn className="mr-2 h-4 w-4" /> Login
-               </Link>
-             </Button>
-          )}
           {!loading && user && (
             <>
               {showDashboardButton && (
