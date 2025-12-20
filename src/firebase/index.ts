@@ -1,17 +1,11 @@
+
 import { initializeApp, getApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 // IMPORTANT: Do not directly edit this object.
 // Your Firebase project's configuration will be injected here automatically.
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+const firebaseConfig = {"apiKey":"your-api-key","authDomain":"your-project-id.firebaseapp.com","projectId":"your-project-id","storageBucket":"your-project-id.appspot.com","messagingSenderId":"your-sender-id","appId":"your-app-id"};
 
 
 function initializeFirebase(): { app: FirebaseApp; auth: Auth; firestore: Firestore } {

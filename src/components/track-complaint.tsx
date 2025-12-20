@@ -19,7 +19,7 @@ const trackSchema = z.object({
 type TrackFormValues = z.infer<typeof trackSchema>;
 
 // IMPORTANT: Replace with your deployed Google Apps Script URL
-const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycAPlKzJ2D-iJ4-8B-3_gDq8xR_j5-Ld-EwA9qCq_x_yZz_wR-B7vD-Zq_A/exec';
+const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_y8j-a4q9pYx6aL4G2R3e1b7c8d9e0f1g2h3i4j5k6l7m8n9o0p/exec';
 
 type ComplaintStatus = {
   title: string;
@@ -47,7 +47,7 @@ export default function TrackComplaint() {
     setComplaint(null);
     setErrorMessage('');
 
-    if (GOOGLE_APP_SCRIPT_URL.includes('YOUR_SCRIPT_ID') || GOOGLE_APP_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbycAPlKzJ2D-iJ4-8B-3_gDq8xR_j5-Ld-EwA9qCq_x_yZz_wR-B7vD-Zq_A/exec') {
+    if (GOOGLE_APP_SCRIPT_URL.includes('YOUR_SCRIPT_ID') || GOOGLE_APP_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbw_y8j-a4q9pYx6aL4G2R3e1b7c8d9e0f1g2h3i4j5k6l7m8n9o0p/exec') {
       setStatus('error');
       setErrorMessage('Google Apps Script URL is not configured. Tracking is disabled.');
       return;

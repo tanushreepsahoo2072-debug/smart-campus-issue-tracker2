@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 // IMPORTANT: Replace with your deployed Google Apps Script URL
-const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycAPlKzJ2D-iJ4-8B-3_gDq8xR_j5-Ld-EwA9qCq_x_yZz_wR-B7vD-Zq_A/exec';
+const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_y8j-a4q9pYx6aL4G2R3e1b7c8d9e0f1g2h3i4j5k6l7m8n9o0p/exec';
 
 const formSchema = z.object({
   title: z.string(),
@@ -62,7 +62,7 @@ export async function handleComplaintSubmission(
     ];
     
     // 6. Send data to Google Apps Script
-    if (GOOGLE_APP_SCRIPT_URL.includes('YOUR_SCRIPT_ID') || GOOGLE_APP_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbycAPlKzJ2D-iJ4-8B-3_gDq8xR_j5-Ld-EwA9qCq_x_yZz_wR-B7vD-Zq_A/exec') {
+    if (GOOGLE_APP_SCRIPT_URL.includes('YOUR_SCRIPT_ID') || GOOGLE_APP_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbw_y8j-a4q9pYx6aL4G2R3e1b7c8d9e0f1g2h3i4j5k6l7m8n9o0p/exec') {
       console.warn('Google Apps Script URL is the template URL. Please replace it with your own.');
       // In a real scenario, you would throw an error. For this demo, we proceed.
     }
