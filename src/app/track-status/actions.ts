@@ -1,7 +1,6 @@
 'use server';
 
 import {
-  getFirestore,
   collection,
   query,
   where,
