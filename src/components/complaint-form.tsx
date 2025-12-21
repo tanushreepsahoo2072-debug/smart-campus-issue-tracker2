@@ -15,9 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper } from 'lucide-react';
+import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,29 +29,23 @@ import {
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 
-const MAX_FILE_SIZE = 5_000_000; // 5MB
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  attachment: z
-    .any()
+  attachments: z
+    .array(z.any())
+    .min(1, 'At least one attachment is required.')
     .refine(
-      (files) => files instanceof FileList && files.length > 0,
-      'At least one attachment is required.'
+      (files) => files.every((file) => file.size <= MAX_FILE_SIZE),
+      `Each file size should not exceed 5MB.`
     )
     .refine(
-      (files) =>
-        files instanceof FileList && Array.from(files).every((file) => file.size <= MAX_FILE_SIZE),
-      'Max file size is 5MB per file.'
-    )
-    .refine(
-      (files) =>
-        files instanceof FileList &&
-        Array.from(files).every((file) => ALLOWED_IMAGE_TYPES.includes(file.type)),
+      (files) => files.every((file) => ALLOWED_IMAGE_TYPES.includes(file.type)),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
 });
@@ -64,6 +58,7 @@ export default function ComplaintForm() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedIssueId, setSubmittedIssueId] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const attachmentFileRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
@@ -73,20 +68,29 @@ export default function ComplaintForm() {
       description: '',
       location: '',
       email: '',
-      attachment: undefined,
+      attachments: [],
     },
   });
 
-  const attachmentValue = form.watch('attachment');
+  useEffect(() => {
+    form.setValue('attachments', selectedFiles, { shouldValidate: true });
+  }, [selectedFiles, form]);
 
-  const attachmentFileNames = useMemo(() => {
-    if (attachmentValue instanceof FileList && attachmentValue.length > 0) {
-      return Array.from(attachmentValue)
-        .map((file) => file.name)
-        .join(', ');
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newFiles = event.target.files ? Array.from(event.target.files) : [];
+    if (newFiles.length > 0) {
+      setSelectedFiles((prevFiles) => [...prevFiles, ...newFiles]);
     }
-    return null;
-  }, [attachmentValue]);
+    // Reset file input to allow selecting the same file again
+    if (attachmentFileRef.current) {
+      attachmentFileRef.current.value = '';
+    }
+  };
+
+  const handleRemoveFile = (indexToRemove: number) => {
+    setSelectedFiles((prevFiles) => prevFiles.filter((_, index) => index !== indexToRemove));
+  };
+
 
   const handleFetchLocation = () => {
     setIsFetchingLocation(true);
@@ -217,37 +221,49 @@ export default function ComplaintForm() {
 
               <FormField
                 control={form.control}
-                name="attachment"
-                render={({ field }) => (
+                name="attachments"
+                render={() => (
                   <FormItem>
-                    <FormLabel>Attachment</FormLabel>
+                    <FormLabel>Attachments</FormLabel>
                     <div className="flex flex-col gap-2">
-                      <div className="flex flex-wrap items-center gap-4">
-                        <Button type="button" onClick={() => attachmentFileRef.current?.click()}>
+                       <Button type="button" onClick={() => attachmentFileRef.current?.click()} className="w-fit">
                           <Paperclip className="mr-2 h-4 w-4" />
-                          Add Attachment
+                          Add Attachment(s)
                         </Button>
-                        <FormControl>
+                      <FormControl>
                           <Input
                             type="file"
                             className="hidden"
                             ref={attachmentFileRef}
-                            onChange={(e) => field.onChange(e.target.files)}
+                            onChange={handleFileChange}
                             accept={ALLOWED_IMAGE_TYPES.join(',')}
                             multiple
                           />
-                        </FormControl>
+                      </FormControl>
+                      
+                       <div className="space-y-2">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between rounded-md border bg-muted p-2 text-sm">
+                            <span className="truncate pr-2">{file.name}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => handleRemoveFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                              <span className="sr-only">Remove file</span>
+                            </Button>
+                          </div>
+                        ))}
                       </div>
-                      {attachmentFileNames && (
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {attachmentFileNames}
-                        </span>
-                      )}
                     </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
 
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
