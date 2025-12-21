@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper } from 'lucide-react';
 import {
@@ -28,7 +28,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
-import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
+
+const MAX_FILE_SIZE = 5_000_000; // 5MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
@@ -37,22 +39,21 @@ const formSchema = z.object({
   email: z.string().email('A valid email is required.'),
   attachment: z
     .any()
-    .refine((files) => {
-      if (!files || files.length === 0) {
-        return false; // Fail validation if no files are selected
-      }
-      return true;
-    }, 'At least one attachment is required.')
-    .refine((files) => {
-      if (!files || files.length === 0) return true; // Pass if no files, handled by previous refine
-      return Array.from(files).every((file: any) => file.size <= 5_000_000);
-    }, 'Max file size is 5MB per file.')
-    .refine((files) => {
-      if (!files || files.length === 0) return true; // Pass if no files, handled by previous refine
-      return Array.from(files).every((file: any) =>
-        ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)
-      );
-    }, 'Only .jpg, .jpeg, .png and .webp formats are supported.'),
+    .refine(
+      (files) => files instanceof FileList && files.length > 0,
+      'At least one attachment is required.'
+    )
+    .refine(
+      (files) =>
+        files instanceof FileList && Array.from(files).every((file) => file.size <= MAX_FILE_SIZE),
+      'Max file size is 5MB per file.'
+    )
+    .refine(
+      (files) =>
+        files instanceof FileList &&
+        Array.from(files).every((file) => ALLOWED_IMAGE_TYPES.includes(file.type)),
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
+    ),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -77,12 +78,15 @@ export default function ComplaintForm() {
   });
 
   const attachmentValue = form.watch('attachment');
-  const attachmentFileNames =
-    attachmentValue && attachmentValue.length > 0
-      ? Array.from(attachmentValue)
-          .map((file: any) => file.name)
-          .join(', ')
-      : null;
+
+  const attachmentFileNames = useMemo(() => {
+    if (attachmentValue instanceof FileList && attachmentValue.length > 0) {
+      return Array.from(attachmentValue)
+        .map((file) => file.name)
+        .join(', ');
+    }
+    return null;
+  }, [attachmentValue]);
 
   const handleFetchLocation = () => {
     setIsFetchingLocation(true);
@@ -229,7 +233,7 @@ export default function ComplaintForm() {
                             className="hidden"
                             ref={attachmentFileRef}
                             onChange={(e) => field.onChange(e.target.files)}
-                            accept="image/png, image/jpeg, image/jpg, image/webp"
+                            accept={ALLOWED_IMAGE_TYPES.join(',')}
                             multiple
                           />
                         </FormControl>
