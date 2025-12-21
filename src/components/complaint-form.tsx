@@ -39,7 +39,7 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  reportedBy: z.string().min(1, 'User must be authenticated.'),
+  reportedBy: z.string().optional(),
   attachments: z
     .array(z.instanceof(File))
     .min(1, 'At least one attachment is required.')
@@ -152,7 +152,7 @@ export default function ComplaintForm() {
     formData.append('description', values.description);
     formData.append('location', values.location);
     formData.append('email', values.email);
-    formData.append('reportedBy', values.reportedBy);
+    formData.append('reportedBy', values.reportedBy || '');
     values.attachments.forEach((file) => {
       formData.append('attachments', file);
     });
@@ -307,7 +307,7 @@ export default function ComplaintForm() {
               />
 
 
-              <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Submitting...
