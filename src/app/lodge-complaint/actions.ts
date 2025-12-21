@@ -31,7 +31,7 @@ export async function handleComplaintSubmission(
       throw new Error(firstError);
     }
     
-    const complaintDocRef = await addDoc(collection(firestore, 'complaints'), {
+    const complaintDocRef = await addDoc(collection(firestore, 'issues'), {
       ...parsed.data,
       createdBy: parsed.data.createdBy || 'anonymous',
       imageUrls: parsed.data.imageUrls || [],

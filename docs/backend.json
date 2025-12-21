@@ -95,11 +95,11 @@
     "providers": ["anonymous", "google.com"]
   },
   "firestore": {
-    "/complaints/{complaintId}": {
+    "/issues/{issueId}": {
       "schema": {
         "$ref": "#/entities/complaint"
       },
-      "description": "Stores all submitted complaints."
+      "description": "Stores all submitted issues/complaints."
     },
     "/users/{userId}": {
       "schema": {

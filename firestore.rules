@@ -1,12 +1,13 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow anyone to create complaints
-    match /complaints/{complaintId} {
+    // Allow anyone to create issues
+    match /issues/{issueId} {
       allow create: if true;
       
-      // Allow users to read complaints if they are authenticated
+      // Allow users to read issues if they are authenticated
       allow read: if request.auth != null;
     }
 

@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -43,7 +44,7 @@ export async function fetchUserComplaints(email: string): Promise<FetchResult> {
   }
 
   try {
-    const complaintsRef = collection(firestore, 'complaints');
+    const complaintsRef = collection(firestore, 'issues');
     const q = query(complaintsRef, where('email', '==', email));
     const querySnapshot = await getDocs(q);
 
