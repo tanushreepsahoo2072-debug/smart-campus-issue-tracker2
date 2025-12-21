@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { initializeFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const { firestore, app } = initializeFirebase();
@@ -42,9 +42,8 @@ export async function handleComplaintSubmission(
     const imageUrls: string[] = [];
 
     if (attachments.length > 0 && attachments[0].size > 0) {
-      // Temporary issueId for storage path, actual complaint isn't created yet.
-      // A more robust solution might use a separate trigger or a placeholder document.
-      const tempIssueId = collection(firestore, 'complaints').doc().id;
+      // Correctly generate a new document ID for the storage path using v9 syntax
+      const tempIssueId = doc(collection(firestore, 'complaints')).id;
 
       const photoUploadPromises = attachments.map(async (file) => {
         const storageRef = ref(storage, `complaints/${tempIssueId}/${file.name}`);
