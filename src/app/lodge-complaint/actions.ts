@@ -3,7 +3,6 @@
 import { z } from 'zod';
 import { initializeFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { categorizeAndPrioritizeComplaint } from '@/ai/flows/categorize-and-prioritize-complaint';
 
 const { firestore } = initializeFirebase();
 
@@ -37,16 +36,12 @@ export async function handleComplaintSubmission(
       throw new Error(firstError);
     }
     
-    const { category, priority } = await categorizeAndPrioritizeComplaint({
-      description: parsed.data.description,
-    });
-
     const docRef = await addDoc(collection(firestore, 'complaints'), {
       email: parsed.data.email,
       title: parsed.data.title,
       description: parsed.data.description,
-      category: category,
-      priority: priority,
+      category: 'Uncategorized',
+      priority: 'Not-Assigned',
       location: parsed.data.location,
       imageUrls: parsed.data.attachments,
       status: 'InProgress',
