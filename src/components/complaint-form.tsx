@@ -37,15 +37,18 @@ const formSchema = z.object({
   email: z.string().email('A valid email is required.'),
   attachment: z
     .any()
-    .refine((files) => files?.length > 0, 'At least one attachment is required.')
     .refine(
-      (files) => Array.from(files).every((file: any) => file?.size <= 5_000_000),
+      (files): files is FileList => files instanceof FileList && files.length > 0,
+      'At least one attachment is required.'
+    )
+    .refine(
+      (files) => Array.from(files).every((file) => file.size <= 5_000_000),
       'Max file size is 5MB per file.'
     )
     .refine(
       (files) =>
-        Array.from(files).every((file: any) =>
-          ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file?.type)
+        Array.from(files).every((file) =>
+          ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)
         ),
       'Only .jpg, .jpeg, .png and .webp formats are supported.'
     ),
