@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,6 +58,31 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+async function uploadImagesToImgbb(files: File[]): Promise<string[]> {
+  const urls: string[] = [];
+  const IMGBB_API_KEY = 'c1fc19fa6575a721e6a1ee966f5ee216'; 
+
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      urls.push(data.data.url);
+    } else {
+      throw new Error(data.error?.message || `Failed to upload ${file.name}.`);
+    }
+  }
+
+  return urls;
+}
+
 
 export default function ComplaintForm() {
   const { user } = useUser();
@@ -157,21 +183,23 @@ export default function ComplaintForm() {
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
 
-    const formData = new FormData();
-    formData.append('title', values.title);
-    formData.append('description', values.description);
-    formData.append('location', values.location);
-    formData.append('email', values.email);
-    formData.append('createdBy', values.createdBy || '');
-    
-    if (values.attachments) {
-        values.attachments.forEach((file) => {
-            formData.append('attachments', file);
-        });
-    }
-
     try {
-      const result = await handleComplaintSubmission(formData);
+      let imageUrls: string[] = [];
+      if (values.attachments && values.attachments.length > 0) {
+        toast({ title: 'Uploading images...', description: 'Please wait.' });
+        imageUrls = await uploadImagesToImgbb(values.attachments);
+      }
+
+      const complaintData = {
+        title: values.title,
+        description: values.description,
+        location: values.location,
+        email: values.email,
+        createdBy: values.createdBy || '',
+        imageUrls,
+      };
+      
+      const result = await handleComplaintSubmission(complaintData);
 
       if (result.success && result.issueId) {
         setSubmittedIssueId(result.issueId);
