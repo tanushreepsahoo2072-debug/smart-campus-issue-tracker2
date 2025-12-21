@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
+import { useUser } from '@/firebase';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
@@ -38,6 +39,7 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
+  reportedBy: z.string().min(1, 'User must be authenticated.'),
   attachments: z
     .array(z.instanceof(File))
     .min(1, 'At least one attachment is required.')
@@ -54,6 +56,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function ComplaintForm() {
+  const { user } = useUser();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -69,9 +72,18 @@ export default function ComplaintForm() {
       description: '',
       location: '',
       email: '',
+      reportedBy: '',
       attachments: [],
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      form.setValue('email', user.email || '');
+      form.setValue('reportedBy', user.uid);
+    }
+  }, [user, form]);
+
 
   useEffect(() => {
     form.setValue('attachments', selectedFiles, { shouldValidate: true });
@@ -141,6 +153,7 @@ export default function ComplaintForm() {
     formData.append('description', values.description);
     formData.append('location', values.location);
     formData.append('email', values.email);
+    formData.append('reportedBy', values.reportedBy);
     values.attachments.forEach((file) => {
       formData.append('attachments', file);
     });
@@ -215,7 +228,7 @@ export default function ComplaintForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="your.email@example.com" {...field} className="pl-10" />
+                        <Input placeholder="your.email@example.com" {...field} className="pl-10" disabled />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -295,7 +308,7 @@ export default function ComplaintForm() {
               />
 
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Submitting...

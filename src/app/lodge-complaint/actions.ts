@@ -3,8 +3,10 @@
 import { z } from 'zod';
 import { initializeFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
-const { firestore } = initializeFirebase();
+const { firestore, app } = initializeFirebase();
+const auth = getAuth(app);
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
@@ -12,6 +14,7 @@ const formSchema = z.object({
   location: z.string().min(1, 'Location is required.'),
   email: z.string().email(),
   attachments: z.array(z.string()),
+  reportedBy: z.string().min(1, 'User must be authenticated.'),
 });
 
 export async function handleComplaintSubmission(
@@ -23,8 +26,8 @@ export async function handleComplaintSubmission(
       description: formData.get('description') as string,
       location: formData.get('location') as string,
       email: formData.get('email') as string,
-      // We'll just get the names for now. The files themselves are not uploaded yet.
       attachments: (formData.getAll('attachments') as File[]).map(f => f.name),
+      reportedBy: formData.get('reportedBy') as string,
     };
 
     const parsed = formSchema.safeParse(rawData);
@@ -37,14 +40,17 @@ export async function handleComplaintSubmission(
     }
     
     const docRef = await addDoc(collection(firestore, 'complaints'), {
-      email: parsed.data.email,
       title: parsed.data.title,
       description: parsed.data.description,
-      category: 'Uncategorized',
-      priority: 'Not-Assigned',
       location: parsed.data.location,
+      email: parsed.data.email,
+      reportedBy: parsed.data.reportedBy,
       imageUrls: parsed.data.attachments,
-      status: 'InProgress',
+      category: 'Electrical', // default from snippet
+      priority: 'High', // default from snippet
+      status: 'Open', // default from snippet
+      assignedTo: '', // default from snippet
+      frequency: 'recurring', // default from snippet
       timestamp: serverTimestamp(),
     });
 

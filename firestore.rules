@@ -2,13 +2,12 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to create complaints
+    // Allow users to create complaints if they are signed in
     match /complaints/{complaintId} {
       allow create: if request.auth != null;
-      // Allow users to read their own complaints
-      allow read: if request.auth != null && request.auth.token.email == resource.data.email;
-      // Allow authorities to read all complaints
-      allow read: if request.auth != null && request.auth.token.role == 'authority';
+      
+      // Allow users to read complaints if they are authenticated
+      allow read: if request.auth != null;
     }
 
     // Protect user roles from being edited by clients

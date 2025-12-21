@@ -66,16 +66,28 @@
         },
         "status": {
           "type": "string",
-          "enum": ["InProgress", "Resolved", "Pending"],
+          "enum": ["InProgress", "Resolved", "Pending", "Open"],
           "description": "The current status of the complaint."
         },
         "timestamp": {
           "type": "string",
           "format": "date-time",
           "description": "The server timestamp when the complaint was submitted."
+        },
+        "reportedBy": {
+          "type": "string",
+          "description": "The UID of the user who reported the issue."
+        },
+        "assignedTo": {
+            "type": "string",
+            "description": "The UID of the authority member assigned to this complaint."
+        },
+        "frequency": {
+            "type": "string",
+            "description": "How often the issue occurs (e.g., recurring, one-time)."
         }
       },
-      "required": ["email", "title", "description", "location", "status", "timestamp"]
+      "required": ["email", "title", "description", "location", "status", "timestamp", "reportedBy"]
     }
   },
   "auth": {
