@@ -77,14 +77,6 @@
         "frequency": {
             "type": "string",
             "description": "How often the issue occurs (e.g., recurring, one-time)."
-        },
-        "imageUrls": {
-            "type": "array",
-            "items": {
-                "type": "string",
-                "format": "uri"
-            },
-            "description": "An array of URLs for images related to the complaint."
         }
       },
       "required": ["email", "title", "description", "location", "currentStatus", "createdAt", "createdBy"]

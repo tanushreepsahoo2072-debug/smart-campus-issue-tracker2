@@ -2,11 +2,9 @@
 
 import { z } from 'zod';
 import { initializeFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-const { firestore, app } = initializeFirebase();
-const storage = getStorage(app);
+const { firestore } = initializeFirebase();
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
@@ -25,7 +23,7 @@ export async function handleComplaintSubmission(
       description: formData.get('description') as string,
       location: formData.get('location') as string,
       email: formData.get('email') as string,
-      createdBy: formData.get('reportedBy') as string, // Note: form sends reportedBy
+      createdBy: formData.get('createdBy') as string,
     };
 
     const parsed = formSchema.safeParse(rawData);
@@ -38,23 +36,7 @@ export async function handleComplaintSubmission(
     }
 
     const createdBy = parsed.data.createdBy || 'anonymous';
-    const attachments = formData.getAll('attachments') as File[];
-    const imageUrls: string[] = [];
-
-    if (attachments.length > 0 && attachments[0].size > 0) {
-      // Correctly generate a new document ID for the storage path using v9 syntax
-      const tempIssueId = doc(collection(firestore, 'complaints')).id;
-
-      const photoUploadPromises = attachments.map(async (file) => {
-        const storageRef = ref(storage, `complaints/${tempIssueId}/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const imageUrl = await getDownloadURL(storageRef);
-        imageUrls.push(imageUrl);
-      });
-
-      await Promise.all(photoUploadPromises);
-    }
-
+    
     const complaintDocRef = await addDoc(collection(firestore, 'complaints'), {
       title: parsed.data.title,
       description: parsed.data.description,
@@ -67,7 +49,6 @@ export async function handleComplaintSubmission(
       assignedTo: '',
       frequency: 'one-time',
       createdAt: serverTimestamp(),
-      imageUrls: imageUrls,
     });
     
     return { success: true, issueId: complaintDocRef.id };

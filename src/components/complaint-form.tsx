@@ -15,9 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { LoaderCircle, Mail, MapPin, Paperclip, PartyPopper, X } from 'lucide-react';
+import { LoaderCircle, Mail, MapPin, PartyPopper } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,26 +31,12 @@ import Link from 'next/link';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 import { useUser } from '@/firebase';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  reportedBy: z.string().optional(),
-  attachments: z
-    .array(z.instanceof(File))
-    .min(1, 'At least one attachment is required.')
-    .refine(
-      (files) => files.every((file) => file.size <= MAX_FILE_SIZE),
-      `Each file size should not exceed 5MB.`
-    )
-    .refine(
-      (files) => files.every((file) => ALLOWED_IMAGE_TYPES.includes(file.type)),
-      'Only .jpg, .jpeg, .png and .webp formats are supported.'
-    ),
+  createdBy: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,8 +48,6 @@ export default function ComplaintForm() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedIssueId, setSubmittedIssueId] = useState<string | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const attachmentFileRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -72,35 +56,18 @@ export default function ComplaintForm() {
       description: '',
       location: '',
       email: '',
-      reportedBy: '',
-      attachments: [],
+      createdBy: '',
     },
   });
 
   useEffect(() => {
     if (user) {
-      form.setValue('reportedBy', user.uid);
+      form.setValue('createdBy', user.uid);
+      if (user.email) {
+        form.setValue('email', user.email);
+      }
     }
   }, [user, form]);
-
-
-  useEffect(() => {
-    form.setValue('attachments', selectedFiles, { shouldValidate: true });
-  }, [selectedFiles, form]);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newFiles = event.target.files ? Array.from(event.target.files) : [];
-    if (newFiles.length > 0) {
-      setSelectedFiles((prevFiles) => [...prevFiles, ...newFiles]);
-    }
-    if (attachmentFileRef.current) {
-      attachmentFileRef.current.value = '';
-    }
-  };
-
-  const handleRemoveFile = (indexToRemove: number) => {
-    setSelectedFiles((prevFiles) => prevFiles.filter((_, index) => index !== indexToRemove));
-  };
 
   const handleFetchLocation = () => {
     setIsFetchingLocation(true);
@@ -152,11 +119,8 @@ export default function ComplaintForm() {
     formData.append('description', values.description);
     formData.append('location', values.location);
     formData.append('email', values.email);
-    formData.append('reportedBy', values.reportedBy || '');
-    values.attachments.forEach((file) => {
-      formData.append('attachments', file);
-    });
-
+    formData.append('createdBy', values.createdBy || '');
+    
     try {
       const result = await handleComplaintSubmission(formData);
 
@@ -164,7 +128,6 @@ export default function ComplaintForm() {
         setSubmittedIssueId(result.issueId);
         setShowSuccessDialog(true);
         form.reset();
-        setSelectedFiles([]);
       } else {
         throw new Error(result.error || 'An unknown error occurred.');
       }
@@ -260,52 +223,6 @@ export default function ComplaintForm() {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="attachments"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Attachments</FormLabel>
-                    <div className="flex flex-col gap-2">
-                       <Button type="button" onClick={() => attachmentFileRef.current?.click()} className="w-fit">
-                          <Paperclip className="mr-2 h-4 w-4" />
-                          Add Attachment(s)
-                        </Button>
-                      <FormControl>
-                          <Input
-                            type="file"
-                            className="hidden"
-                            ref={attachmentFileRef}
-                            onChange={handleFileChange}
-                            accept={ALLOWED_IMAGE_TYPES.join(',')}
-                            multiple
-                          />
-                      </FormControl>
-                      
-                       <div className="space-y-2">
-                        {selectedFiles.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between rounded-md border bg-muted p-2 text-sm">
-                            <span className="truncate pr-2">{file.name}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => handleRemoveFile(index)}
-                            >
-                              <X className="h-4 w-4" />
-                              <span className="sr-only">Remove file</span>
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
 
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
