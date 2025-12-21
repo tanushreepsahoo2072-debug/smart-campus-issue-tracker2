@@ -1,12 +1,11 @@
+
 'use server';
 
 import { z } from 'zod';
 import { initializeFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-const { firestore, app } = initializeFirebase();
-const storage = getStorage(app);
+const { firestore } = initializeFirebase();
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -29,6 +28,32 @@ const formSchema = z.object({
     )
     .optional(),
 });
+
+async function uploadImages(files: File[]): Promise<string[]> {
+  const urls: string[] = [];
+  const IMGBB_API_KEY = 'c1fc19fa6575a721e6a1ee966f5ee216'; 
+
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      urls.push(data.data.url);
+    } else {
+      // Handle potential upload error from imgbb
+      throw new Error(data.error?.message || 'Failed to upload image to imgbb.');
+    }
+  }
+
+  return urls;
+}
+
 
 export async function handleComplaintSubmission(
   formData: FormData
@@ -57,29 +82,18 @@ export async function handleComplaintSubmission(
     const createdBy = parsed.data.createdBy || 'anonymous';
     const attachments = parsed.data.attachments || [];
 
-    // Use a temporary doc to get an ID for storage paths
-    const tempIssueRef = doc(collection(firestore, 'complaints'));
-    const tempIssueId = tempIssueRef.id;
-
-    const imageUrls: string[] = [];
+    let imageUrls: string[] = [];
     if (attachments.length > 0) {
-      const uploadPromises = attachments.map(async (file) => {
-        const storageRef = ref(storage, `complaints/${tempIssueId}/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        imageUrls.push(downloadURL);
-      });
-      await Promise.all(uploadPromises);
+      imageUrls = await uploadImages(attachments);
     }
-
-    // Now create the actual document with the final ID and data
+    
     const complaintDocRef = await addDoc(collection(firestore, 'complaints'), {
       title,
       description,
       location,
       email,
       createdBy,
-      imageUrls, // Save the array of URLs
+      imageUrls,
       category: 'Infrastructure',
       priority: 'Not-Assigned',
       currentStatus: 'Open',
