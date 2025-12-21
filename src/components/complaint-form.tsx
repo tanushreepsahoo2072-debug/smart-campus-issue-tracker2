@@ -79,7 +79,6 @@ export default function ComplaintForm() {
 
   useEffect(() => {
     if (user) {
-      form.setValue('email', user.email || '');
       form.setValue('reportedBy', user.uid);
     }
   }, [user, form]);
@@ -228,7 +227,7 @@ export default function ComplaintForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="your.email@example.com" {...field} className="pl-10" disabled />
+                        <Input placeholder="your.email@example.com" {...field} className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
