@@ -14,6 +14,8 @@ export default function LoginForm() {
 
   const handleEnter = () => {
     setIsSubmitting(true);
+    // This logic is for navigation demonstration purposes.
+    // A real app would have authentication here.
     if (role === 'authority') {
       router.push('/authority/dashboard');
     } else {
@@ -25,7 +27,7 @@ export default function LoginForm() {
     <Card className="w-full max-w-sm rounded-2xl shadow-lg">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Welcome to CivicConnect</CardTitle>
-        <CardDescription>Please sign in to continue</CardDescription>
+        <CardDescription>Select your role to continue</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
         <div className="flex items-center justify-center space-x-4">
