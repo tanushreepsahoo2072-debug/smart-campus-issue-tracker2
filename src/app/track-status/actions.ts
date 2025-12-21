@@ -1,8 +1,16 @@
 'use server';
 
-// IMPORTANT: Replace with your deployed Google Apps Script URL
-const GOOGLE_APP_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbz2FRXSJu8WziHyuc7pDOtALFrRgRVyf0MC-vZiBxwMBN65CmRtEhVaKP0hACM60Zbkgg/exec';
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  Timestamp,
+} from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
+
+const { firestore } = initializeFirebase();
 
 type Complaint = {
   issueId: string;
@@ -10,9 +18,9 @@ type Complaint = {
   category: string;
   priority: string;
   status: string;
-  submittedOn: string;
+  submittedOn: string; // ISO string
   assignedTo: string;
-  lastUpdate: string;
+  lastUpdate: string; // ISO string
   notes: string;
 };
 
@@ -22,57 +30,52 @@ type FetchResult = {
   error?: string;
 };
 
+function formatTimestamp(timestamp: Timestamp | Date): string {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate().toISOString();
+  }
+  return timestamp.toISOString();
+}
+
+
 export async function fetchUserComplaints(email: string): Promise<FetchResult> {
-  if (
-    GOOGLE_APP_SCRIPT_URL.includes('YOUR_SCRIPT_ID') ||
-    GOOGLE_APP_SCRIPT_URL ===
-      'https://script.google.com/macros/s/AKfycbw_y8j-a4q9pYx6aL4G2R3e1b7c8d9e0f1g2h3i4j5k6l7m8n9o0p/exec'
-  ) {
-    console.warn('Google Apps Script URL is not configured.');
-    return {
-      status: 'error',
-      error: 'Google Apps Script URL is not configured. Complaint tracking is disabled.',
-    };
+  if (!email) {
+    return { status: 'error', error: 'Email is required to fetch complaints.' };
   }
 
   try {
-    const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?email=${email}`, {
-      method: 'GET',
-      cache: 'no-store',
-      redirect: 'follow', // Important for Google Apps Script redirects
-    });
+    const complaintsRef = collection(firestore, 'complaints');
+    const q = query(complaintsRef, where('email', '==', email));
+    const querySnapshot = await getDocs(q);
 
-    if (!response.ok) {
-      throw new Error(`Network response was not ok, status: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    if (result.status === 'success' && Array.isArray(result.data)) {
-      const fetchedComplaints: Complaint[] = result.data.map(
-        (item: any) =>
-          ({
-            issueId: item.IssueID,
-            title: item.Title,
-            category: item.Category,
-            priority: item.Priority,
-            status: item.Status,
-            submittedOn: item.Timestamp,
-            assignedTo: item.AssignedTo || 'Unassigned',
-            lastUpdate: item.Timestamp, // Placeholder
-            notes: item.Notes || 'No notes yet.',
-          } as Complaint)
-      );
-      return {
-        status: fetchedComplaints.length > 0 ? 'success' : 'not-found',
-        data: fetchedComplaints,
-      };
-    } else {
+    if (querySnapshot.empty) {
       return { status: 'not-found' };
     }
+
+    const complaints: Complaint[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      complaints.push({
+        issueId: doc.id,
+        title: data.title || 'No Title',
+        category: data.category || 'Uncategorized',
+        priority: data.priority || 'Normal',
+        status: data.status || 'Unknown',
+        submittedOn: data.timestamp ? formatTimestamp(data.timestamp) : new Date().toISOString(),
+        assignedTo: data.assignedTo || 'Unassigned',
+        lastUpdate: data.timestamp ? formatTimestamp(data.timestamp) : new Date().toISOString(), // Placeholder
+        notes: data.notes || 'No notes yet.',
+      });
+    });
+
+    return { status: 'success', data: complaints };
   } catch (error) {
-    console.error('Error tracking complaints via server action:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    return { status: 'error', error: `Failed to fetch complaint status: ${errorMessage}` };
+    console.error('Error fetching complaints from Firestore:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unknown error occurred.';
+    return {
+      status: 'error',
+      error: `Failed to fetch complaint status: ${errorMessage}`,
+    };
   }
 }

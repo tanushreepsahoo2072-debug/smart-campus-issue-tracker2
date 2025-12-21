@@ -28,9 +28,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
+import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
@@ -38,8 +39,8 @@ const formSchema = z.object({
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
   attachments: z
-    .array(z.any())
-    .refine((files) => files.length > 0, 'At least one attachment is required.')
+    .array(z.instanceof(File))
+    .min(1, 'At least one attachment is required.')
     .refine(
       (files) => files.every((file) => file.size <= MAX_FILE_SIZE),
       `Each file size should not exceed 5MB.`
@@ -81,7 +82,6 @@ export default function ComplaintForm() {
     if (newFiles.length > 0) {
       setSelectedFiles((prevFiles) => [...prevFiles, ...newFiles]);
     }
-    // Reset file input to allow selecting the same file again
     if (attachmentFileRef.current) {
       attachmentFileRef.current.value = '';
     }
@@ -133,63 +133,34 @@ export default function ComplaintForm() {
     }
   };
 
-  function generateUniqueId() {
-    const timestamp = Date.now();
-    const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
-    return `CIV-${timestamp}-${randomPart}`;
-  }
-
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
-    try {
-      const issueId = generateUniqueId();
-      
-      // 1. Prepare the text content
-      const fileNames = values.attachments.map(file => file.name).join(', ');
-      const textContent = `
-        key: value
-        -----------
-        issueId: ${issueId}
-        email: ${values.email}
-        title: ${values.title}
-        description: ${values.description}
-        location: ${values.location}
-        status: InProgress
-        timestamp: ${new Date().toISOString()}
-        attachments: [${fileNames}]
-      `;
 
-      // 2. Create a Blob from the text content
-      const blob = new Blob([textContent.trim()], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      
-      // 3. Create a temporary link to trigger the download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'complaint-details.txt';
-      document.body.appendChild(a);
-      a.click();
-      
-      // 4. Clean up the temporary link and URL
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      // 5. Show success dialog
-      setSubmittedIssueId(issueId);
+    const formData = new FormData();
+    formData.append('title', values.title);
+    formData.append('description', values.description);
+    formData.append('location', values.location);
+    formData.append('email', values.email);
+    values.attachments.forEach((file) => {
+      formData.append('attachments[]', file.name);
+    });
+
+    const result = await handleComplaintSubmission(formData);
+
+    if (result.success && result.issueId) {
+      setSubmittedIssueId(result.issueId);
       setShowSuccessDialog(true);
       form.reset();
       setSelectedFiles([]);
-
-    } catch (error) {
-      console.error('Submission failed:', error);
+    } else {
       toast({
         variant: 'destructive',
         title: 'Submission Error',
-        description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        description: result.error || 'An unknown server error occurred.',
       });
-    } finally {
-      setIsSubmitting(false);
     }
+
+    setIsSubmitting(false);
   }
 
   return (

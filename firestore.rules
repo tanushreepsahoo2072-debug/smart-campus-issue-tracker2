@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to create complaints
+    match /complaints/{complaintId} {
+      allow create: if request.auth != null;
+      // Allow users to read their own complaints
+      allow read: if request.auth != null && request.auth.token.email == resource.data.email;
+      // Allow authorities to read all complaints
+      allow read: if request.auth != null && request.auth.token.role == 'authority';
+    }
+
+    // Protect user roles from being edited by clients
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

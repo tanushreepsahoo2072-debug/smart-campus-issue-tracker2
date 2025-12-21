@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique ID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["citizen", "authority"],
+          "description": "The user's role."
+        }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "complaint": {
+      "title": "Complaint",
+      "description": "Represents a single complaint submitted by a user.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email of the user submitting the complaint."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the complaint."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the complaint."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the complaint (e.g., Road Maintenance, Waste Management)."
+        },
+        "priority": {
+          "type": "string",
+          "description": "The priority level of the complaint (e.g., Low, Medium, High)."
+        },
+        "location": {
+          "type": "string",
+          "description": "GPS coordinates of the incident location."
+        },
+        "imageUrls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "An array of URLs for attached images."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["InProgress", "Resolved", "Pending"],
+          "description": "The current status of the complaint."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The server timestamp when the complaint was submitted."
+        }
+      },
+      "required": ["email", "title", "description", "location", "status", "timestamp"]
+    }
+  },
+  "auth": {
+    "providers": ["anonymous", "google.com"]
+  },
+  "firestore": {
+    "/complaints/{complaintId}": {
+      "schema": {
+        "$ref": "#/entities/complaint"
+      },
+      "description": "Stores all submitted complaints."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/userProfile"
+      },
+      "description": "Stores user profile information, including their role."
+    }
+  }
+}
