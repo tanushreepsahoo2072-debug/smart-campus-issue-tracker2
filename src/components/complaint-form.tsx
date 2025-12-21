@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { LoaderCircle, Mail, MapPin, PartyPopper } from 'lucide-react';
+import { LoaderCircle, Mail, MapPin, PartyPopper, Paperclip, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,12 +31,29 @@ import Link from 'next/link';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 import { useUser } from '@/firebase';
 
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
   createdBy: z.string().optional(),
+  attachments: z
+    .array(z.instanceof(File))
+    .max(MAX_FILES, `You can only upload a maximum of ${MAX_FILES} files.`)
+    .optional()
+    .refine(
+      (files) =>
+        !files || files.every((file) => ALLOWED_FILE_TYPES.includes(file.type)),
+      'Only .jpg, .jpeg, .png, .webp, and .gif formats are supported.'
+    )
+    .refine(
+      (files) => !files || files.every((file) => file.size <= MAX_FILE_SIZE),
+      `Each file size must be less than 5MB.`
+    ),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,6 +65,7 @@ export default function ComplaintForm() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedIssueId, setSubmittedIssueId] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -57,6 +75,7 @@ export default function ComplaintForm() {
       location: '',
       email: '',
       createdBy: '',
+      attachments: [],
     },
   });
 
@@ -68,6 +87,30 @@ export default function ComplaintForm() {
       }
     }
   }, [user, form]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const newFiles = Array.from(event.target.files);
+      const allFiles = [...selectedFiles, ...newFiles];
+      if (allFiles.length > MAX_FILES) {
+        toast({
+          variant: 'destructive',
+          title: 'Too many files',
+          description: `You can only upload a maximum of ${MAX_FILES} files.`,
+        });
+        return;
+      }
+      setSelectedFiles(allFiles);
+      form.setValue('attachments', allFiles, { shouldValidate: true });
+    }
+  };
+
+  const removeFile = (indexToRemove: number) => {
+    const updatedFiles = selectedFiles.filter((_, index) => index !== indexToRemove);
+    setSelectedFiles(updatedFiles);
+    form.setValue('attachments', updatedFiles, { shouldValidate: true });
+  };
+
 
   const handleFetchLocation = () => {
     setIsFetchingLocation(true);
@@ -121,6 +164,12 @@ export default function ComplaintForm() {
     formData.append('email', values.email);
     formData.append('createdBy', values.createdBy || '');
     
+    if (values.attachments) {
+        values.attachments.forEach((file) => {
+            formData.append('attachments', file);
+        });
+    }
+
     try {
       const result = await handleComplaintSubmission(formData);
 
@@ -128,6 +177,7 @@ export default function ComplaintForm() {
         setSubmittedIssueId(result.issueId);
         setShowSuccessDialog(true);
         form.reset();
+        setSelectedFiles([]);
       } else {
         throw new Error(result.error || 'An unknown error occurred.');
       }
@@ -223,6 +273,57 @@ export default function ComplaintForm() {
                   </FormItem>
                 )}
               />
+              
+              <FormField
+                control={form.control}
+                name="attachments"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Attachments (Max 5 files, 5MB each)</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-4">
+                        <Button type="button" asChild variant="outline">
+                          <label htmlFor="file-upload" className="cursor-pointer">
+                            <Paperclip className="mr-2 h-4 w-4" />
+                            Select Files
+                          </label>
+                        </Button>
+                        <Input
+                          id="file-upload"
+                          type="file"
+                          multiple
+                          onChange={handleFileChange}
+                          className="hidden"
+                          accept="image/*"
+                        />
+                      </div>
+                    </FormControl>
+                     {selectedFiles.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        <h4 className="text-sm font-medium">Selected files:</h4>
+                        <ul className="list-inside list-disc space-y-1">
+                          {selectedFiles.map((file, index) => (
+                            <li key={index} className="flex items-center justify-between text-sm text-muted-foreground">
+                              <span>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => removeFile(index)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
 
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
