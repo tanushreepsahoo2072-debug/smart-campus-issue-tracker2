@@ -7,7 +7,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const { firestore } = initializeFirebase();
 
-const formSchema = z.object({
+const complaintSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Location is required.'),
@@ -16,13 +16,13 @@ const formSchema = z.object({
   imageUrls: z.array(z.string().url()).optional(),
 });
 
-type ComplaintData = z.infer<typeof formSchema>;
+type ComplaintData = z.infer<typeof complaintSchema>;
 
 export async function handleComplaintSubmission(
   data: ComplaintData
 ): Promise<{ success: boolean; issueId?: string; error?: string }> {
   try {
-    const parsed = formSchema.safeParse(data);
+    const parsed = complaintSchema.safeParse(data);
 
     if (!parsed.success) {
       const firstError =
@@ -30,17 +30,12 @@ export async function handleComplaintSubmission(
         'Invalid form data provided.';
       throw new Error(firstError);
     }
-
-    const { title, description, location, email, createdBy, imageUrls } = parsed.data;
     
     const complaintDocRef = await addDoc(collection(firestore, 'complaints'), {
-      title,
-      description,
-      location,
-      email,
-      createdBy: createdBy || 'anonymous',
-      imageUrls: imageUrls || [],
-      category: 'Infrastructure',
+      ...parsed.data,
+      createdBy: parsed.data.createdBy || 'anonymous',
+      imageUrls: parsed.data.imageUrls || [],
+      category: 'Infrastructure', // Default category
       priority: 'Not-Assigned',
       currentStatus: 'Open',
       assignedTo: '',
