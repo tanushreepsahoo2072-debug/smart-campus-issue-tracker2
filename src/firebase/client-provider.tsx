@@ -4,6 +4,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
+import { FirebaseStorage } from 'firebase/storage';
 import { initializeFirebase, FirebaseProvider } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -16,6 +17,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     app: FirebaseApp;
     auth: Auth;
     firestore: Firestore;
+    storage: FirebaseStorage;
   } | null>(null);
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       app={firebaseInstances.app}
       auth={firebaseInstances.auth}
       firestore={firebaseInstances.firestore}
+      storage={firebaseInstances.storage}
     >
       {children}
     </FirebaseProvider>

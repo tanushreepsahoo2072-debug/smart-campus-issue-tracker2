@@ -56,14 +56,6 @@
           "type": "string",
           "description": "GPS coordinates of the incident location."
         },
-        "imageUrls": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "format": "uri"
-          },
-          "description": "An array of URLs for attached images."
-        },
         "status": {
           "type": "string",
           "enum": ["InProgress", "Resolved", "Pending", "Open"],
@@ -88,6 +80,28 @@
         }
       },
       "required": ["email", "title", "description", "location", "status", "timestamp", "reportedBy"]
+    },
+    "photo": {
+      "title": "Photo",
+      "description": "Represents a photo uploaded for a complaint.",
+      "type": "object",
+      "properties": {
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the uploaded image in Firebase Storage."
+        },
+        "uploadedBy": {
+          "type": "string",
+          "description": "The UID of the user who uploaded the photo."
+        },
+        "uploadedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the photo was uploaded."
+        }
+      },
+      "required": ["imageUrl", "uploadedBy", "uploadedAt"]
     }
   },
   "auth": {
@@ -99,6 +113,12 @@
         "$ref": "#/entities/complaint"
       },
       "description": "Stores all submitted complaints."
+    },
+    "/complaints/{complaintId}/photos/{photoId}": {
+      "schema": {
+        "$ref": "#/entities/photo"
+      },
+      "description": "Stores photos for a specific complaint."
     },
     "/users/{userId}": {
       "schema": {

@@ -8,6 +8,11 @@ service cloud.firestore {
       
       // Allow users to read complaints if they are authenticated
       allow read: if request.auth != null;
+
+      // Allow users to add photos to their own complaints
+      match /photos/{photoId} {
+        allow create: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/complaints/$(complaintId)).data.reportedBy;
+      }
     }
 
     // Protect user roles from being edited by clients

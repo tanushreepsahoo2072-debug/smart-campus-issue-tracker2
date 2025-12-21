@@ -3,9 +3,11 @@
 import { z } from 'zod';
 import { initializeFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
 const { firestore, app } = initializeFirebase();
+const storage = getStorage(app);
 const auth = getAuth(app);
 
 const formSchema = z.object({
@@ -13,7 +15,6 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Location is required.'),
   email: z.string().email(),
-  attachments: z.array(z.string()),
   reportedBy: z.string().min(1, 'User must be authenticated.'),
 });
 
@@ -26,7 +27,6 @@ export async function handleComplaintSubmission(
       description: formData.get('description') as string,
       location: formData.get('location') as string,
       email: formData.get('email') as string,
-      attachments: (formData.getAll('attachments') as File[]).map(f => f.name),
       reportedBy: formData.get('reportedBy') as string,
     };
 
@@ -38,23 +38,42 @@ export async function handleComplaintSubmission(
         'Invalid form data provided.';
       throw new Error(firstError);
     }
-    
-    const docRef = await addDoc(collection(firestore, 'complaints'), {
+
+    const complaintDocRef = await addDoc(collection(firestore, 'complaints'), {
       title: parsed.data.title,
       description: parsed.data.description,
       location: parsed.data.location,
       email: parsed.data.email,
       reportedBy: parsed.data.reportedBy,
-      imageUrls: parsed.data.attachments,
-      category: 'Electrical', // default from snippet
-      priority: 'High', // default from snippet
-      status: 'Open', // default from snippet
-      assignedTo: '', // default from snippet
-      frequency: 'recurring', // default from snippet
+      category: 'Uncategorized',
+      priority: 'Not-Assigned',
+      status: 'Open',
+      assignedTo: '',
+      frequency: 'one-time',
       timestamp: serverTimestamp(),
     });
 
-    return { success: true, issueId: docRef.id };
+    const issueId = complaintDocRef.id;
+    const attachments = formData.getAll('attachments') as File[];
+
+    if (attachments.length > 0) {
+      const photoUploadPromises = attachments.map(async (file) => {
+        const storageRef = ref(storage, `complaints/${issueId}/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const imageUrl = await getDownloadURL(storageRef);
+
+        const photosCollectionRef = collection(firestore, 'complaints', issueId, 'photos');
+        await addDoc(photosCollectionRef, {
+          imageUrl: imageUrl,
+          uploadedBy: parsed.data.reportedBy,
+          uploadedAt: serverTimestamp(),
+        });
+      });
+
+      await Promise.all(photoUploadPromises);
+    }
+    
+    return { success: true, issueId: issueId };
 
   } catch (error) {
     console.error('Error handling complaint submission:', error);
