@@ -3,5 +3,8 @@
     "source": "src/functions",
     "runtime": "nodejs20",
     "codebase": "default"
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }
