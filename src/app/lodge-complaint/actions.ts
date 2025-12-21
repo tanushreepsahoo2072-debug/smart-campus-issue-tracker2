@@ -1,16 +1,6 @@
 'use server';
 
 import { z } from 'zod';
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
-
-// Initialize Firebase Admin SDK
-const { firestore } = initializeFirebase();
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
@@ -23,18 +13,18 @@ const formSchema = z.object({
 export async function handleComplaintSubmission(
   formData: FormData
 ): Promise<{ success: boolean; issueId?: string; error?: string }> {
+  // This server action is currently a placeholder.
+  // The primary submission logic is handled on the client-side for testing.
   try {
-    const attachmentNames = formData.getAll('attachments[]');
-
-    const rawFormData = {
+    const rawData = {
       title: formData.get('title'),
       description: formData.get('description'),
       location: formData.get('location'),
       email: formData.get('email'),
-      attachments: attachmentNames,
+      attachments: formData.getAll('attachments[]'),
     };
 
-    const parsed = formSchema.safeParse(rawFormData);
+    const parsed = formSchema.safeParse(rawData);
 
     if (!parsed.success) {
       const firstError =
@@ -42,26 +32,14 @@ export async function handleComplaintSubmission(
         'Invalid form data provided.';
       throw new Error(firstError);
     }
+    
+    // In a real scenario, this is where you would save to a database.
+    // For now, we just simulate a success response.
+    const mockIssueId = `CIV-${Date.now()}`;
+    return { success: true, issueId: mockIssueId };
 
-    const { title, description, location, email, attachments } = parsed.data;
-
-    const complaintData = {
-      email,
-      title,
-      description,
-      category: '',
-      priority: '',
-      location,
-      imageUrls: attachments,
-      status: 'InProgress',
-      timestamp: serverTimestamp(),
-    };
-
-    const docRef = await addDoc(collection(firestore, 'complaints'), complaintData);
-
-    return { success: true, issueId: docRef.id };
   } catch (error) {
-    console.error('Error saving complaint to Firestore:', error);
+    console.error('Error handling complaint submission:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown server error occurred.';
     return { success: false, error: errorMessage };

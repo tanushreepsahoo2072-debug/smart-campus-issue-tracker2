@@ -28,7 +28,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
-import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
@@ -135,32 +134,51 @@ export default function ComplaintForm() {
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
-
-    const formData = new FormData();
-    formData.append('title', values.title);
-    formData.append('description', values.description);
-    formData.append('location', values.location);
-    formData.append('email', values.email);
-    values.attachments.forEach((file) => {
-      formData.append('attachments[]', file.name);
-    });
-
-    const result = await handleComplaintSubmission(formData);
-
-    if (result.success && result.issueId) {
-      setSubmittedIssueId(result.issueId);
+  
+    try {
+      // 1. Format the data into a key:value string
+      const fileNames = values.attachments.map(file => file.name).join(', ');
+      const content = `title: ${values.title}
+description: ${values.description}
+email: ${values.email}
+location: ${values.location}
+attachments: ${fileNames}
+`;
+  
+      // 2. Create a Blob from the string
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  
+      // 3. Create a temporary URL for the Blob
+      const url = URL.createObjectURL(blob);
+  
+      // 4. Create a temporary anchor tag to trigger the download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'complaint-details.txt';
+      document.body.appendChild(link);
+      link.click();
+  
+      // 5. Clean up the temporary elements
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+  
+      // 6. Show success dialog
+      const mockIssueId = `CIV-${Date.now()}`;
+      setSubmittedIssueId(mockIssueId);
       setShowSuccessDialog(true);
       form.reset();
       setSelectedFiles([]);
-    } else {
+  
+    } catch (error) {
+      console.error('Submission error:', error);
       toast({
         variant: 'destructive',
         title: 'Submission Error',
-        description: result.error || 'An unknown server error occurred.',
+        description: 'An unexpected error occurred while generating the file.',
       });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   }
 
   return (
