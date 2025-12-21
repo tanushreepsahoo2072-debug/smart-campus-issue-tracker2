@@ -50,12 +50,14 @@ export default function UserComplaints() {
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'in progress':
+      case 'inprogress':
         return 'secondary';
       case 'resolved':
         return 'default';
       case 'pending':
         return 'outline';
+      case 'open':
+        return 'destructive';
       default:
         return 'secondary';
     }

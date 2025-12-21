@@ -56,17 +56,17 @@
           "type": "string",
           "description": "GPS coordinates of the incident location."
         },
-        "status": {
+        "currentStatus": {
           "type": "string",
           "enum": ["InProgress", "Resolved", "Pending", "Open"],
           "description": "The current status of the complaint."
         },
-        "timestamp": {
+        "createdAt": {
           "type": "string",
           "format": "date-time",
           "description": "The server timestamp when the complaint was submitted."
         },
-        "reportedBy": {
+        "createdBy": {
           "type": "string",
           "description": "The UID of the user who reported the issue."
         },
@@ -77,31 +77,17 @@
         "frequency": {
             "type": "string",
             "description": "How often the issue occurs (e.g., recurring, one-time)."
+        },
+        "imageUrls": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "format": "uri"
+            },
+            "description": "An array of URLs for images related to the complaint."
         }
       },
-      "required": ["email", "title", "description", "location", "status", "timestamp", "reportedBy"]
-    },
-    "photo": {
-      "title": "Photo",
-      "description": "Represents a photo uploaded for a complaint.",
-      "type": "object",
-      "properties": {
-        "imageUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "The URL of the uploaded image in Firebase Storage."
-        },
-        "uploadedBy": {
-          "type": "string",
-          "description": "The UID of the user who uploaded the photo."
-        },
-        "uploadedAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The timestamp when the photo was uploaded."
-        }
-      },
-      "required": ["imageUrl", "uploadedBy", "uploadedAt"]
+      "required": ["email", "title", "description", "location", "currentStatus", "createdAt", "createdBy"]
     }
   },
   "auth": {
@@ -113,12 +99,6 @@
         "$ref": "#/entities/complaint"
       },
       "description": "Stores all submitted complaints."
-    },
-    "/complaints/{complaintId}/photos/{photoId}": {
-      "schema": {
-        "$ref": "#/entities/photo"
-      },
-      "description": "Stores photos for a specific complaint."
     },
     "/users/{userId}": {
       "schema": {

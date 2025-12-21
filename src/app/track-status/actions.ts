@@ -59,10 +59,10 @@ export async function fetchUserComplaints(email: string): Promise<FetchResult> {
         title: data.title || 'No Title',
         category: data.category || 'Uncategorized',
         priority: data.priority || 'Normal',
-        status: data.status || 'Unknown',
-        submittedOn: data.timestamp ? formatTimestamp(data.timestamp) : new Date().toISOString(),
+        status: data.currentStatus || 'Unknown',
+        submittedOn: data.createdAt ? formatTimestamp(data.createdAt) : new Date().toISOString(),
         assignedTo: data.assignedTo || 'Unassigned',
-        lastUpdate: data.timestamp ? formatTimestamp(data.timestamp) : new Date().toISOString(), // Placeholder
+        lastUpdate: data.createdAt ? formatTimestamp(data.createdAt) : new Date().toISOString(), // Placeholder
         notes: data.notes || 'No notes yet.',
       });
     });

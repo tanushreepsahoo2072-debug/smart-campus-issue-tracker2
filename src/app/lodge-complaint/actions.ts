@@ -13,7 +13,7 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Location is required.'),
   email: z.string().email(),
-  reportedBy: z.string().optional(),
+  createdBy: z.string().optional(),
 });
 
 export async function handleComplaintSubmission(
@@ -25,7 +25,7 @@ export async function handleComplaintSubmission(
       description: formData.get('description') as string,
       location: formData.get('location') as string,
       email: formData.get('email') as string,
-      reportedBy: formData.get('reportedBy') as string,
+      createdBy: formData.get('reportedBy') as string, // Note: form sends reportedBy
     };
 
     const parsed = formSchema.safeParse(rawData);
@@ -37,43 +37,41 @@ export async function handleComplaintSubmission(
       throw new Error(firstError);
     }
 
-    const reportedBy = parsed.data.reportedBy || 'anonymous';
+    const createdBy = parsed.data.createdBy || 'anonymous';
+    const attachments = formData.getAll('attachments') as File[];
+    const imageUrls: string[] = [];
+
+    if (attachments.length > 0 && attachments[0].size > 0) {
+      // Temporary issueId for storage path, actual complaint isn't created yet.
+      // A more robust solution might use a separate trigger or a placeholder document.
+      const tempIssueId = collection(firestore, 'complaints').doc().id;
+
+      const photoUploadPromises = attachments.map(async (file) => {
+        const storageRef = ref(storage, `complaints/${tempIssueId}/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const imageUrl = await getDownloadURL(storageRef);
+        imageUrls.push(imageUrl);
+      });
+
+      await Promise.all(photoUploadPromises);
+    }
 
     const complaintDocRef = await addDoc(collection(firestore, 'complaints'), {
       title: parsed.data.title,
       description: parsed.data.description,
       location: parsed.data.location,
       email: parsed.data.email,
-      reportedBy: reportedBy,
-      category: 'Uncategorized',
+      createdBy: createdBy,
+      category: 'Infrastructure',
       priority: 'Not-Assigned',
-      status: 'Open',
+      currentStatus: 'Open',
       assignedTo: '',
       frequency: 'one-time',
-      timestamp: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      imageUrls: imageUrls,
     });
-
-    const issueId = complaintDocRef.id;
-    const attachments = formData.getAll('attachments') as File[];
-
-    if (attachments.length > 0 && attachments[0].size > 0) {
-      const photoUploadPromises = attachments.map(async (file) => {
-        const storageRef = ref(storage, `complaints/${issueId}/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const imageUrl = await getDownloadURL(storageRef);
-
-        const photosCollectionRef = collection(firestore, 'complaints', issueId, 'photos');
-        await addDoc(photosCollectionRef, {
-          imageUrl: imageUrl,
-          uploadedBy: reportedBy,
-          uploadedAt: serverTimestamp(),
-        });
-      });
-
-      await Promise.all(photoUploadPromises);
-    }
     
-    return { success: true, issueId: issueId };
+    return { success: true, issueId: complaintDocRef.id };
 
   } catch (error) {
     console.error('Error handling complaint submission:', error);
