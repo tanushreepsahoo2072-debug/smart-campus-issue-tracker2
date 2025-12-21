@@ -124,33 +124,46 @@ export default function ComplaintForm() {
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
-    
-    const formData = new FormData();
-    formData.append('title', values.title);
-    formData.append('description', values.description);
-    formData.append('location', values.location);
-    formData.append('email', values.email);
 
-    if (values.attachment && values.attachment.length > 0) {
-      Array.from(values.attachment).forEach((file: any) => {
-        formData.append('attachment', file);
-      });
-    }
+    try {
+      // Create a text file with other form details
+      const textContent = `Title: ${values.title}\nDescription: ${values.description}\nLocation: ${values.location}\nEmail: ${values.email}`;
+      const textBlob = new Blob([textContent], { type: 'text/plain' });
+      const textUrl = URL.createObjectURL(textBlob);
+      const textLink = document.createElement('a');
+      textLink.href = textUrl;
+      textLink.download = 'complaint-details.txt';
+      document.body.appendChild(textLink);
+      textLink.click();
+      document.body.removeChild(textLink);
+      URL.revokeObjectURL(textUrl);
 
-    const result = await handleComplaintSubmission(formData);
+      // Download each attachment
+      if (values.attachment && values.attachment.length > 0) {
+        Array.from(values.attachment).forEach((file: any) => {
+          const fileUrl = URL.createObjectURL(file);
+          const fileLink = document.createElement('a');
+          fileLink.href = fileUrl;
+          fileLink.download = file.name;
+          document.body.appendChild(fileLink);
+          fileLink.click();
+          document.body.removeChild(fileLink);
+          URL.revokeObjectURL(fileUrl);
+        });
+      }
 
-    setIsSubmitting(false);
-
-    if (result.success && result.issueId) {
-      setSubmittedIssueId(result.issueId);
+      setSubmittedIssueId('TEST-DOWNLOAD');
       setShowSuccessDialog(true);
       form.reset();
-    } else {
+    } catch (error) {
+      console.error('Test submission failed:', error);
       toast({
         variant: 'destructive',
-        title: 'Submission Failed',
-        description: result.error || 'An unexpected error occurred.',
+        title: 'Download Failed',
+        description: 'An unexpected error occurred while preparing the files for download.',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
