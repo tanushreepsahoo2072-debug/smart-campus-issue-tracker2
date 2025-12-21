@@ -4,18 +4,16 @@ import { z } from 'zod';
 import { initializeFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
 
 const { firestore, app } = initializeFirebase();
 const storage = getStorage(app);
-const auth = getAuth(app);
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Location is required.'),
   email: z.string().email(),
-  reportedBy: z.string().min(1, 'User must be authenticated.'),
+  reportedBy: z.string().optional(),
 });
 
 export async function handleComplaintSubmission(
@@ -39,12 +37,14 @@ export async function handleComplaintSubmission(
       throw new Error(firstError);
     }
 
+    const reportedBy = parsed.data.reportedBy || 'anonymous';
+
     const complaintDocRef = await addDoc(collection(firestore, 'complaints'), {
       title: parsed.data.title,
       description: parsed.data.description,
       location: parsed.data.location,
       email: parsed.data.email,
-      reportedBy: parsed.data.reportedBy,
+      reportedBy: reportedBy,
       category: 'Uncategorized',
       priority: 'Not-Assigned',
       status: 'Open',
@@ -56,7 +56,7 @@ export async function handleComplaintSubmission(
     const issueId = complaintDocRef.id;
     const attachments = formData.getAll('attachments') as File[];
 
-    if (attachments.length > 0) {
+    if (attachments.length > 0 && attachments[0].size > 0) {
       const photoUploadPromises = attachments.map(async (file) => {
         const storageRef = ref(storage, `complaints/${issueId}/${file.name}`);
         await uploadBytes(storageRef, file);
@@ -65,7 +65,7 @@ export async function handleComplaintSubmission(
         const photosCollectionRef = collection(firestore, 'complaints', issueId, 'photos');
         await addDoc(photosCollectionRef, {
           imageUrl: imageUrl,
-          uploadedBy: parsed.data.reportedBy,
+          uploadedBy: reportedBy,
           uploadedAt: serverTimestamp(),
         });
       });
