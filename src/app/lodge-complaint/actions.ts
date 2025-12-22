@@ -35,12 +35,20 @@ export async function handleComplaintSubmission(
       ...parsed.data,
       createdBy: parsed.data.createdBy || 'anonymous',
       imageUrls: parsed.data.imageUrls || [],
-      category: 'Infrastructure', // Default category
+      category: '',
       priority: 'Not-Assigned',
       currentStatus: 'Open',
       assignedTo: '',
       frequency: 'one-time',
       createdAt: serverTimestamp(),
+      updatedAt: '',
+      predicted_resolution_time: '',
+      admin_comments: '',
+      ai_priority: '',
+      ai_spam_score: '',
+      is_spam: false,
+      spam_reason: '',
+      AI: 0,
     });
 
     return { success: true, issueId: complaintDocRef.id };
