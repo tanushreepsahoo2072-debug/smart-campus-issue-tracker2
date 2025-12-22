@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginForm() {
   const [role, setRole] = useState<'citizen' | 'authority'>('citizen');
@@ -17,7 +18,7 @@ export default function LoginForm() {
     // This logic is for navigation demonstration purposes.
     // A real app would have authentication here.
     if (role === 'authority') {
-      router.push('/authority/dashboard');
+      router.push('/authority-login');
     } else {
       router.push('/dashboard');
     }
