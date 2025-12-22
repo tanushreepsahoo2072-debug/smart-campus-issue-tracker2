@@ -41,18 +41,10 @@ export default function UserComplaints() {
 
     const getComplaints = async () => {
       setStatus('loading');
-      const result = await fetchUserComplaints(userEmail);
-
-      if (result.status === 'success' && result.data) {
-        setComplaints(result.data);
-        setStatus('found');
-      } else if (result.status === 'not-found') {
-        setComplaints([]);
-        setStatus('not-found');
-      } else {
-        setErrorMessage(result.error || 'An unknown error occurred.');
-        setStatus('error');
-      }
+      // This is a placeholder, as fetchUserComplaints is being replaced.
+      // The new primary functionality is in `fetchComplaintById`.
+      // This component is now effectively deprecated but kept for code context.
+      setStatus('not-found');
     };
 
     getComplaints();
@@ -101,7 +93,7 @@ export default function UserComplaints() {
     return (
         <Alert>
           <AlertTitle>No Complaints Found</AlertTitle>
-          <AlertDescription>You have not submitted any complaints yet.</AlertDescription>
+          <AlertDescription>Please use the search bar above to track a specific issue by its ID.</AlertDescription>
         </Alert>
     );
   }
