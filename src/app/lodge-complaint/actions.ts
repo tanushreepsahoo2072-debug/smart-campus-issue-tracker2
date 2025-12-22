@@ -12,7 +12,7 @@ const complaintSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Location is required.'),
   email: z.string().email(),
-  createdBy: z.string().optional(),
+  createdBy: z.string().min(1, 'User ID is required.'),
   imageUrls: z.array(z.string().url()).optional(),
 });
 
@@ -33,6 +33,7 @@ export async function handleComplaintSubmission(
     
     const complaintDocRef = await addDoc(collection(firestore, 'issues'), {
       ...parsed.data,
+      createdBy: parsed.data.createdBy,
       imageUrls: parsed.data.imageUrls || [],
       category: '',
       priority: 'Not-Assigned',

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { fetchUserComplaints } from '@/app/track-status/actions';
+import { useUser } from '@/firebase';
 
 type Complaint = {
   issueId: string;
@@ -21,13 +23,21 @@ type Complaint = {
 };
 
 export default function UserComplaints() {
+  const { user, loading: userLoading } = useUser();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'found' | 'not-found' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'found' | 'not-found' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    // We will use a mock email for development since we are not logged in.
-    const userEmail = 'citizen@example.com';
+    if (userLoading) return; // Wait until user object is resolved
+
+    if (!user || !user.email) {
+      setStatus('error');
+      setErrorMessage('You must be signed in to view your complaints.');
+      return;
+    }
+    
+    const userEmail = user.email;
 
     const getComplaints = async () => {
       setStatus('loading');
@@ -46,7 +56,7 @@ export default function UserComplaints() {
     };
 
     getComplaints();
-  }, []);
+  }, [user, userLoading]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status?.toLowerCase()) {

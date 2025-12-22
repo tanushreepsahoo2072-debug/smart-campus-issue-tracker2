@@ -41,7 +41,7 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  createdBy: z.string().optional(),
+  createdBy: z.string().min(1, 'User ID is required.'),
   attachments: z
     .array(z.instanceof(File))
     .max(MAX_FILES, `You can only upload a maximum of ${MAX_FILES} files.`)
@@ -195,7 +195,7 @@ export default function ComplaintForm() {
         description: values.description,
         location: values.location,
         email: values.email,
-        createdBy: values.createdBy || '',
+        createdBy: values.createdBy,
         imageUrls,
       };
       
@@ -268,7 +268,7 @@ export default function ComplaintForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="your.email@example.com" {...field} className="pl-10" />
+                        <Input placeholder="your.email@example.com" {...field} className="pl-10" readOnly disabled/>
                       </div>
                     </FormControl>
                     <FormMessage />
