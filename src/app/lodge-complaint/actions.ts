@@ -33,7 +33,6 @@ export async function handleComplaintSubmission(
     
     const complaintDocRef = await addDoc(collection(firestore, 'issues'), {
       ...parsed.data,
-      createdBy: parsed.data.createdBy || 'anonymous',
       imageUrls: parsed.data.imageUrls || [],
       category: '',
       priority: 'Not-Assigned',
