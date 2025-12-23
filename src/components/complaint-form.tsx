@@ -108,6 +108,9 @@ export default function ComplaintForm() {
   useEffect(() => {
     if (user) {
       form.setValue('createdBy', user.uid);
+      if (user.email) {
+        form.setValue('email', user.email);
+      }
     } else {
       form.setValue('createdBy', 'anonymous');
     }
@@ -221,6 +224,17 @@ export default function ComplaintForm() {
     }
   }
 
+  const handleCopyToClipboard = () => {
+    if (submittedIssueId) {
+      navigator.clipboard.writeText(submittedIssueId);
+      toast({
+        title: 'Copied to Clipboard!',
+        description: 'The complaint ID has been copied.',
+      });
+    }
+  };
+
+
   return (
     <>
       <Card className="rounded-2xl shadow-lg">
@@ -268,7 +282,7 @@ export default function ComplaintForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input type="email" placeholder="your.email@example.com" {...field} className="pl-10" />
+                        <Input type="email" placeholder="your.email@example.com" {...field} className="pl-10" readOnly={!!user} />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -382,11 +396,11 @@ export default function ComplaintForm() {
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter className="sm:justify-center">
-            <AlertDialogAction asChild>
-              <Link href="/track-status">Track Status</Link>
+            <AlertDialogAction onClick={handleCopyToClipboard}>
+              Copy Complaint ID
             </AlertDialogAction>
             <AlertDialogAction asChild variant="outline" onClick={() => setShowSuccessDialog(false)}>
-              <button>Close</button>
+              <span>Close</span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -394,5 +408,3 @@ export default function ComplaintForm() {
     </>
   );
 }
-
-    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -17,6 +18,7 @@ import { Separator } from '@/components/ui/separator';
 
 import { fetchComplaintById, type ComplaintDetails } from './actions';
 import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   trackId: z.string().min(1, 'Track ID cannot be empty.'),
@@ -27,51 +29,61 @@ const statusIcons: { [key: string]: React.ReactNode } = {
   Open: <FilePenLine className="h-4 w-4" />,
   "In Progress": <Wrench className="h-4 w-4" />,
   Resolved: <CheckCircle className="h-4 w-4 text-green-500" />,
-  Denied: <XCircle className="h-4 w-4" />,
+  Denied: <XCircle className="h-4 w-4 text-destructive" />,
 };
 
 const priorityColorClass: { [key: string]: string } = {
-  Critical: "bg-red-500 border-red-500",
-  High: "bg-orange-500 border-orange-500",
-  Medium: "bg-yellow-500 border-yellow-500",
-  Low: "bg-green-500 border-green-500",
+  Critical: "bg-red-500 border-red-500 text-white",
+  High: "bg-orange-500 border-orange-500 text-white",
+  Medium: "bg-yellow-500 border-yellow-500 text-black",
+  Low: "bg-green-500 border-green-500 text-white",
 };
 
 function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
   return (
-    <Card className="w-full overflow-hidden rounded-2xl shadow-lg">
-      <CardHeader className="relative p-0">
-        {complaint.imageUrls.length > 0 && (
-          <div className="aspect-video w-full">
-            <Image
-              src={complaint.imageUrls[0]}
-              alt={complaint.title}
-              fill
-              className="object-cover"
-            />
-          </div>
-        )}
-        <Badge
-          className={`absolute left-4 top-4 ${priorityColorClass[complaint.ai_priority] || 'bg-gray-400 text-white'}`}
-        >
-          {complaint.ai_priority} Priority
-        </Badge>
+    <Card className="flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
+      {complaint.imageUrls.length > 0 && (
+        <div className="relative h-48 w-full">
+          <Image
+            src={complaint.imageUrls[0]}
+            alt={complaint.title}
+            fill
+            className="object-cover"
+          />
+        </div>
+      )}
+      <CardHeader>
+        <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-lg leading-tight font-bold">{complaint.title}</CardTitle>
+            <Badge
+                className={cn(
+                "whitespace-nowrap text-white",
+                priorityColorClass[complaint.ai_priority]
+                )}
+            >
+                {complaint.ai_priority}
+            </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground pt-1">
+          Reported {complaint.createdAt ? formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true }) : 'some time ago'}
+        </p>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col justify-end p-6">
-        <CardTitle className="text-lg leading-tight font-bold">{complaint.title}</CardTitle>
-        <p className="my-4 text-muted-foreground">{complaint.description}</p>
+      <CardContent className="flex-grow space-y-4">
+        <p className="text-muted-foreground">{complaint.description}</p>
         
-        <div className="flex items-center">
+        <div className="flex items-center text-sm">
             {statusIcons[complaint.currentStatus]}
-            <span className="ml-2">{complaint.currentStatus}</span>
+            <span className="ml-2 font-medium">{complaint.currentStatus}</span>
         </div>
 
         {complaint.admin_comments && (
           <>
-            <Separator className="my-6" />
+            <Separator />
             <div>
               <p className="text-sm font-medium text-muted-foreground">Admin Feedback</p>
-              <p className="mt-1 whitespace-pre-wrap">{complaint.admin_comments}</p>
+              <p className="mt-1 whitespace-pre-wrap rounded-md border bg-muted/50 p-2">
+                {complaint.admin_comments}
+              </p>
               {complaint.updatedAt && (
                 <p className="mt-2 text-xs text-muted-foreground">{complaint.updatedAt}</p>
               )}
@@ -79,11 +91,6 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
           </>
         )}
       </CardContent>
-      <CardFooter className="bg-muted/50 p-4">
-        <p className="w-full text-right text-xs text-muted-foreground">
-            Reported {complaint.createdAt ? formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true }) : 'some time ago'}
-        </p>
-      </CardFooter>
     </Card>
   );
 }
