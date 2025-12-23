@@ -30,20 +30,12 @@ const statusIcons: { [key: string]: React.ReactNode } = {
   Denied: <XCircle className="text-black" />,
 };
 
-const priorityVariant: { [key: string]: 'destructive' | 'secondary' | 'outline' | 'default' } = {
-  Critical: 'destructive',
-  High: 'secondary', // Orange-like
-  Medium: 'outline',   // Yellow-like
-  Low: 'default',      // Green-like
-};
-
 const priorityColorClass: { [key: string]: string } = {
-    Critical: 'bg-red-500 hover:bg-red-600',
-    High: 'bg-orange-500 hover:bg-orange-600 text-white',
-    Medium: 'bg-yellow-400 hover:bg-yellow-500 text-black',
-    Low: 'bg-green-500 hover:bg-green-600',
+  Critical: 'bg-red-500 hover:bg-red-600 text-white',
+  High: 'bg-orange-500 hover:bg-orange-600 text-white',
+  Medium: 'bg-yellow-400 hover:bg-yellow-500 text-black',
+  Low: 'bg-green-500 hover:bg-green-600 text-white',
 };
-
 
 function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
   return (
@@ -60,7 +52,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
           </div>
         )}
         <Badge
-          className={`absolute left-4 top-4 text-white ${priorityColorClass[complaint.ai_priority]}`}
+          className={`absolute left-4 top-4 ${priorityColorClass[complaint.ai_priority] || 'bg-gray-400 text-white'}`}
         >
           {complaint.ai_priority} Priority
         </Badge>
