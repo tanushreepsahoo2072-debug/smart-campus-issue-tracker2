@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, Query, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, Query, query, orderBy, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Complaint } from '@/types/complaint';
 
@@ -24,10 +24,11 @@ export default function AuthorityDashboardPage() {
     }
 
     const issuesCollection = collection(firestore, 'issues');
-    // Query for all documents and order by creation date
+    // Query for documents where AI is 1 and order by creation date
     const issuesQuery: Query = query(
-        issuesCollection, 
-        orderBy('createdAt', 'desc')
+      issuesCollection,
+      where('AI', '==', 1),
+      orderBy('createdAt', 'desc')
     );
 
     const unsubscribe = onSnapshot(
