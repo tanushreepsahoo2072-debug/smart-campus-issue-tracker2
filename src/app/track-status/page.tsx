@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 import { fetchComplaintById, type ComplaintDetails } from './actions';
-import { LoaderCircle, Search, Pen, Wrench, CheckCircle, XCircle, Info, ServerCrash } from 'lucide-react';
+import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine } from 'lucide-react';
 
 const formSchema = z.object({
   trackId: z.string().min(1, 'Track ID cannot be empty.'),
@@ -24,17 +24,17 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const statusIcons: { [key: string]: React.ReactNode } = {
-  Open: <Pen className="h-5 w-5 text-blue-500" />,
-  'In Progress': <Wrench className="h-5 w-5 text-orange-500" />,
-  Resolved: <CheckCircle className="h-5 w-5 text-green-500" />,
-  Denied: <XCircle className="h-5 w-5 text-red-500" />,
+  Open: <FilePenLine className="h-4 w-4" />,
+  "In Progress": <Wrench className="h-4 w-4" />,
+  Resolved: <CheckCircle className="h-4 w-4 text-green-500" />,
+  Denied: <XCircle className="h-4 w-4" />,
 };
 
 const priorityColorClass: { [key: string]: string } = {
-  Critical: 'bg-red-500 hover:bg-red-600 text-white',
-  High: 'bg-orange-500 hover:bg-orange-600 text-white',
-  Medium: 'bg-yellow-400 hover:bg-yellow-500 text-black',
-  Low: 'bg-green-500 hover:bg-green-600 text-white',
+  Critical: "bg-red-500 border-red-500",
+  High: "bg-orange-500 border-orange-500",
+  Medium: "bg-yellow-500 border-yellow-500",
+  Low: "bg-green-500 border-green-500",
 };
 
 function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
@@ -57,13 +57,13 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
           {complaint.ai_priority} Priority
         </Badge>
       </CardHeader>
-      <CardContent className="p-6">
-        <CardTitle className="mb-2 text-2xl font-bold">{complaint.title}</CardTitle>
-        <p className="mb-6 text-muted-foreground">{complaint.description}</p>
+      <CardContent className="flex-grow flex flex-col justify-end p-6">
+        <CardTitle className="text-lg leading-tight font-bold">{complaint.title}</CardTitle>
+        <p className="my-4 text-muted-foreground">{complaint.description}</p>
         
-        <div className="mb-6 flex items-center gap-4 rounded-lg border bg-muted/50 p-4">
-            <div className="flex-shrink-0">{statusIcons[complaint.currentStatus]}</div>
-            <p className="flex-grow font-semibold">{complaint.currentStatus}</p>
+        <div className="flex items-center">
+            {statusIcons[complaint.currentStatus]}
+            <span className="ml-2">{complaint.currentStatus}</span>
         </div>
 
         {complaint.admin_comments && (
