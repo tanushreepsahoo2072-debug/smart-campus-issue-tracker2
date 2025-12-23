@@ -128,7 +128,7 @@ export default function TrackStatusPage() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mb-8 flex items-center gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mb-8 mt-px flex items-center gap-4">
           <FormField
             control={form.control}
             name="trackId"
