@@ -30,18 +30,21 @@ import {
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
-import { useUser } from '@/firebase';
+import { useUser, useStorage } from '@/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
+// Add createdBy to the form schema
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  createdBy: z.string().optional(),
+  createdBy: z.string().min(1, 'User must be authenticated.'),
   attachments: z
     .array(z.instanceof(File))
     .max(MAX_FILES, `You can only upload a maximum of ${MAX_FILES} files.`)
@@ -59,33 +62,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-async function uploadImagesToImgbb(files: File[]): Promise<string[]> {
-  const urls: string[] = [];
-  const IMGBB_API_KEY = 'c1fc19fa6575a721e6a1ee966f5ee216'; 
-
-  for (const file of files) {
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      urls.push(data.data.url);
-    } else {
-      throw new Error(data.error?.message || `Failed to upload ${file.name}.`);
-    }
-  }
-
-  return urls;
-}
-
-
 export default function ComplaintForm() {
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -107,15 +86,10 @@ export default function ComplaintForm() {
 
   useEffect(() => {
     if (user) {
-      form.setValue('createdBy', user.uid);
-      if (user.email) {
-        form.setValue('email', user.email);
-      }
-    } else {
-      form.setValue('createdBy', 'anonymous');
+      if (user.email) form.setValue('email', user.email);
+      if (user.uid) form.setValue('createdBy', user.uid);
     }
   }, [user, form]);
-
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -183,22 +157,38 @@ export default function ComplaintForm() {
     }
   };
 
+  async function uploadFiles(issueId: string, files: File[]): Promise<string[]> {
+    if (!storage) {
+      throw new Error('Firebase Storage is not initialized.');
+    }
+  
+    const uploadPromises = files.map(async (file) => {
+      const uniqueFileName = `${uuidv4()}-${file.name}`;
+      const storageRef = ref(storage, `complaints/${issueId}/${uniqueFileName}`);
+      await uploadBytes(storageRef, file);
+      return getDownloadURL(storageRef);
+    });
+  
+    return Promise.all(uploadPromises);
+  }
+
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
+    let tempIssueId = uuidv4();
 
     try {
       let imageUrls: string[] = [];
-      if (values.attachments && values.attachments.length > 0) {
+      if (storage && values.attachments && values.attachments.length > 0) {
         toast({ title: 'Uploading images...', description: 'Please wait.' });
-        imageUrls = await uploadImagesToImgbb(values.attachments);
+        imageUrls = await uploadFiles(tempIssueId, values.attachments);
       }
-
+      
       const complaintData = {
         title: values.title,
         description: values.description,
         location: values.location,
         email: values.email,
-        createdBy: values.createdBy || 'anonymous',
+        createdBy: values.createdBy,
         imageUrls,
       };
       
@@ -234,6 +224,13 @@ export default function ComplaintForm() {
     }
   };
 
+  if (userLoading) {
+    return (
+        <div className="flex justify-center p-8">
+            <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   return (
     <>
@@ -282,7 +279,7 @@ export default function ComplaintForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input type="email" placeholder="your.email@example.com" {...field} className="pl-10" readOnly={!!user} />
+                        <Input placeholder="your.email@example.com" {...field} className="pl-10" readOnly disabled />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -366,8 +363,7 @@ export default function ComplaintForm() {
                 )}
               />
 
-
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Submitting...
@@ -400,7 +396,7 @@ export default function ComplaintForm() {
               Copy Complaint ID
             </AlertDialogAction>
             <AlertDialogAction asChild variant="outline" onClick={() => setShowSuccessDialog(false)}>
-              <span>Close</span>
+              <button>Close</button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
