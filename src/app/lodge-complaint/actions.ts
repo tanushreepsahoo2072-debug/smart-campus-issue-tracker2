@@ -41,7 +41,7 @@ export async function handleComplaintSubmission(
       assignedTo: '',
       frequency: 'one-time',
       createdAt: serverTimestamp(),
-      updatedAt: '',
+      updatedAt: null,
       predicted_resolution_time: '',
       admin_comments: '',
       ai_priority: '',
@@ -59,3 +59,5 @@ export async function handleComplaintSubmission(
     return { success: false, error: errorMessage };
   }
 }
+
+    

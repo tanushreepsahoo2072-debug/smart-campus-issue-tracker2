@@ -30,8 +30,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 import { useUser, useStorage } from '@/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, update } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -64,6 +67,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ComplaintForm() {
   const { user } = useUser();
   const storage = useStorage();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -90,7 +94,6 @@ export default function ComplaintForm() {
     } else {
         // Clear fields if user logs out
         form.resetField('createdBy');
-        form.resetField('email');
     }
   }, [user, form]);
 
@@ -177,31 +180,33 @@ export default function ComplaintForm() {
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
-    let tempIssueId = uuidv4();
 
     try {
-      let imageUrls: string[] = [];
-      if (storage && values.attachments && values.attachments.length > 0) {
-        toast({ title: 'Uploading images...', description: 'Please wait.' });
-        imageUrls = await uploadFiles(tempIssueId, values.attachments);
-      }
-      
       const complaintData = {
         title: values.title,
         description: values.description,
         location: values.location,
         email: values.email,
         createdBy: values.createdBy,
-        imageUrls,
+        imageUrls: [],
       };
       
       const result = await handleComplaintSubmission(complaintData);
 
       if (result.success && result.issueId) {
+        let imageUrls: string[] = [];
+        if (storage && firestore && values.attachments && values.attachments.length > 0) {
+            toast({ title: 'Uploading images...', description: 'Please wait.' });
+            imageUrls = await uploadFiles(result.issueId, values.attachments);
+            const issueDocRef = doc(firestore, 'issues', result.issueId);
+            await updateDoc(issueDocRef, { imageUrls });
+        }
+        
         setSubmittedIssueId(result.issueId);
         setShowSuccessDialog(true);
         form.reset();
         setSelectedFiles([]);
+
       } else {
         throw new Error(result.error || 'An unknown error occurred.');
       }
@@ -400,3 +405,5 @@ export default function ComplaintForm() {
     </>
   );
 }
+
+    
