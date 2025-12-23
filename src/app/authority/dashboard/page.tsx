@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, Query, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, Query, query, where, orderBy } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Complaint } from '@/types/complaint';
 
@@ -24,7 +24,12 @@ export default function AuthorityDashboardPage() {
     }
 
     const issuesCollection = collection(firestore, 'issues');
-    const issuesQuery: Query = query(issuesCollection, orderBy('createdAt', 'desc'));
+    // Query for documents where AI is 1 and order by creation date
+    const issuesQuery: Query = query(
+        issuesCollection, 
+        where('AI', '==', 1), 
+        orderBy('createdAt', 'desc')
+    );
 
     const unsubscribe = onSnapshot(
       issuesQuery,
@@ -74,9 +79,9 @@ export default function AuthorityDashboardPage() {
           ) : complaints.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
               <ListX className="h-12 w-12 text-muted-foreground" />
-              <h3 className="text-xl font-semibold">No Issues Found</h3>
+              <h3 className="text-xl font-semibold">No Processed Issues Found</h3>
               <p className="text-muted-foreground">
-                There are currently no complaints in the system. New issues will appear here live.
+                There are currently no AI-processed complaints. New issues will appear here live once processed.
               </p>
             </div>
           ) : (
