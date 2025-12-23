@@ -46,7 +46,7 @@ export async function handleComplaintSubmission(
       admin_comments: '',
       ai_priority: '',
       ai_spam_score: '',
-      is_spam: false,
+is_spam: false,
       spam_reason: '',
       AI: 0,
     });
@@ -59,5 +59,3 @@ export async function handleComplaintSubmission(
     return { success: false, error: errorMessage };
   }
 }
-
-    

@@ -29,18 +29,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
-import { useUser, useStorage } from '@/firebase';
-import { ref, uploadBytes, getDownloadURL, update } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
-import { doc, updateDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-
+import { useUser } from '@/firebase';
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-// Update form schema to make createdBy optional
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
@@ -66,8 +60,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ComplaintForm() {
   const { user } = useUser();
-  const storage = useStorage();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -88,12 +80,8 @@ export default function ComplaintForm() {
   });
 
   useEffect(() => {
-    if (user) {
-      if (user.uid) form.setValue('createdBy', user.uid);
-      if (user.email) form.setValue('email', user.email, { shouldValidate: true });
-    } else {
-        // Clear fields if user logs out
-        form.resetField('createdBy');
+    if (user && user.uid) {
+      form.setValue('createdBy', user.uid);
     }
   }, [user, form]);
 
@@ -163,18 +151,36 @@ export default function ComplaintForm() {
     }
   };
 
-  async function uploadFiles(issueId: string, files: File[]): Promise<string[]> {
-    if (!storage) {
-      throw new Error('Firebase Storage is not initialized.');
+  async function uploadFilesToImgBB(files: File[]): Promise<string[]> {
+    const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+    if (!apiKey) {
+      throw new Error('ImgBB API key is not configured.');
     }
-  
+    
+    if (files.length === 0) {
+      return [];
+    }
+
+    toast({ title: 'Uploading images...', description: 'Please wait.' });
+
     const uploadPromises = files.map(async (file) => {
-      const uniqueFileName = `${uuidv4()}-${file.name}`;
-      const storageRef = ref(storage, `complaints/${issueId}/${uniqueFileName}`);
-      await uploadBytes(storageRef, file);
-      return getDownloadURL(storageRef);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        return result.data.url;
+      } else {
+        throw new Error(result.error?.message || 'Failed to upload an image.');
+      }
     });
-  
+
     return Promise.all(uploadPromises);
   }
 
@@ -182,26 +188,20 @@ export default function ComplaintForm() {
     setIsSubmitting(true);
 
     try {
+      const imageUrls = values.attachments ? await uploadFilesToImgBB(values.attachments) : [];
+
       const complaintData = {
         title: values.title,
         description: values.description,
         location: values.location,
         email: values.email,
         createdBy: values.createdBy,
-        imageUrls: [],
+        imageUrls: imageUrls,
       };
       
       const result = await handleComplaintSubmission(complaintData);
 
       if (result.success && result.issueId) {
-        let imageUrls: string[] = [];
-        if (storage && firestore && values.attachments && values.attachments.length > 0) {
-            toast({ title: 'Uploading images...', description: 'Please wait.' });
-            imageUrls = await uploadFiles(result.issueId, values.attachments);
-            const issueDocRef = doc(firestore, 'issues', result.issueId);
-            await updateDoc(issueDocRef, { imageUrls });
-        }
-        
         setSubmittedIssueId(result.issueId);
         setShowSuccessDialog(true);
         form.reset();
@@ -405,5 +405,3 @@ export default function ComplaintForm() {
     </>
   );
 }
-
-    
