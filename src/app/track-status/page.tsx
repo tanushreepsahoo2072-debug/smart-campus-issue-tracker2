@@ -24,10 +24,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const statusIcons: { [key: string]: React.ReactNode } = {
-  Open: <Pen />,
-  'In Progress': <Wrench />,
-  Resolved: <CheckCircle className="text-green-500" />,
-  Denied: <XCircle className="text-black" />,
+  Open: <Pen className="h-5 w-5 text-blue-500" />,
+  'In Progress': <Wrench className="h-5 w-5 text-orange-500" />,
+  Resolved: <CheckCircle className="h-5 w-5 text-green-500" />,
+  Denied: <XCircle className="h-5 w-5 text-red-500" />,
 };
 
 const priorityColorClass: { [key: string]: string } = {
@@ -61,7 +61,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
         <CardTitle className="mb-2 text-2xl font-bold">{complaint.title}</CardTitle>
         <p className="mb-6 text-muted-foreground">{complaint.description}</p>
         
-        <div className="mb-6 flex items-center gap-4 rounded-lg border p-4">
+        <div className="mb-6 flex items-center gap-4 rounded-lg border bg-muted/50 p-4">
             <div className="flex-shrink-0">{statusIcons[complaint.currentStatus]}</div>
             <p className="flex-grow font-semibold">{complaint.currentStatus}</p>
         </div>
