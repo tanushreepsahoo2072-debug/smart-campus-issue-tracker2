@@ -59,5 +59,3 @@ export async function handleComplaintSubmission(
     return { success: false, error: errorMessage };
   }
 }
-
-    

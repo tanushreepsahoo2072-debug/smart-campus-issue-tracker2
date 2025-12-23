@@ -28,7 +28,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import Link from 'next/link';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 import { useUser, useStorage } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -38,13 +37,13 @@ const MAX_FILES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-// Add createdBy to the form schema
+// Update form schema to make createdBy optional
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  createdBy: z.string().min(1, 'User must be authenticated.'),
+  createdBy: z.string().optional(),
   attachments: z
     .array(z.instanceof(File))
     .max(MAX_FILES, `You can only upload a maximum of ${MAX_FILES} files.`)
@@ -87,6 +86,11 @@ export default function ComplaintForm() {
   useEffect(() => {
     if (user) {
       if (user.uid) form.setValue('createdBy', user.uid);
+      if (user.email) form.setValue('email', user.email, { shouldValidate: true });
+    } else {
+        // Clear fields if user logs out
+        form.resetField('createdBy');
+        form.resetField('email');
     }
   }, [user, form]);
 
@@ -355,7 +359,7 @@ export default function ComplaintForm() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Submitting...
