@@ -63,7 +63,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function ComplaintForm() {
-  const { user, loading: userLoading } = useUser();
+  const { user } = useUser();
   const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -224,6 +224,7 @@ export default function ComplaintForm() {
     }
   };
 
+
   return (
     <>
       <Card className="rounded-2xl shadow-lg">
@@ -271,7 +272,7 @@ export default function ComplaintForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="your.email@example.com" {...field} className="pl-10" />
+                        <Input placeholder="your.email@example.com" {...field} className="pl-10" readOnly disabled />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -355,7 +356,7 @@ export default function ComplaintForm() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isSubmitting || userLoading}>
+              <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Submitting...

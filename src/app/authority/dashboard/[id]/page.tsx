@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 
 import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface IssuePageProps {
   params: {
@@ -110,6 +111,18 @@ export default function IssuePage({ params }: IssuePageProps) {
   if (!issue) {
     return notFound();
   }
+
+  if (issue.AI !== 1) {
+    return (
+        <div className="container mx-auto flex h-[calc(100vh-10rem)] max-w-5xl items-center justify-center p-4 md:p-8">
+            <Alert>
+                <Bot className="h-4 w-4" />
+                <AlertTitle>Processing Issue</AlertTitle>
+                <AlertDescription>This issue is currently being processed by our AI. Please check back later for a full status update.</AlertDescription>
+            </Alert>
+        </div>
+    );
+  }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
 
@@ -145,10 +158,6 @@ export default function IssuePage({ params }: IssuePageProps) {
                 </CardHeader>
                 <CardContent className="p-6">
                     <CardTitle className="text-2xl font-bold leading-tight">{issue.title}</CardTitle>
-                    <CardDescription className="mt-2">
-                        Track ID: <span className="font-mono">{issue.id}</span>
-                    </CardDescription>
-                    
                     <p className="mt-4 text-muted-foreground">{issue.description}</p>
                     
                     <Separator className="my-6" />
@@ -160,26 +169,25 @@ export default function IssuePage({ params }: IssuePageProps) {
                                 {statusIcons[issue.currentStatus]} {issue.currentStatus}
                             </span>
                         </div>
-                         <div className="flex justify-between">
-                            <span className="font-medium text-muted-foreground">Location</span>
-                            <span className="font-mono">{issue.location}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="font-medium text-muted-foreground">Reported By</span>
-                            <span>{issue.email}</span>
-                        </div>
                     </div>
+                    
+                    {issue.admin_comments && (
+                        <div className="mt-6 space-y-2 rounded-lg border bg-muted/50 p-4">
+                            <p className="text-sm font-semibold">Admin Feedback</p>
+                            <p className="whitespace-pre-wrap text-muted-foreground">{issue.admin_comments}</p>
+                            {issue.updatedAt && (
+                                <p className="pt-2 text-xs text-muted-foreground/80">
+                                    Updated {formatDistanceToNow(new Date(issue.updatedAt), { addSuffix: true })}
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </CardContent>
                  <CardFooter className="bg-muted/50 p-4">
-                    <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex w-full items-center justify-end text-xs text-muted-foreground">
                         <span>
                             Reported {issue.createdAt ? formatDistanceToNow(new Date(issue.createdAt), { addSuffix: true }) : 'just now'}
                         </span>
-                        {issue.updatedAt && (
-                            <span>
-                            Last updated {formatDistanceToNow(new Date(issue.updatedAt), { addSuffix: true })}
-                            </span>
-                        )}
                     </div>
                 </CardFooter>
             </Card>
