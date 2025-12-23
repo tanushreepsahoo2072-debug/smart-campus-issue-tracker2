@@ -224,14 +224,6 @@ export default function ComplaintForm() {
     }
   };
 
-  if (userLoading) {
-    return (
-        <div className="flex justify-center p-8">
-            <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-        </div>
-    );
-  }
-
   return (
     <>
       <Card className="rounded-2xl shadow-lg">
@@ -279,7 +271,7 @@ export default function ComplaintForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="your.email@example.com" {...field} className="pl-10" readOnly disabled />
+                        <Input placeholder="your.email@example.com" {...field} className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -363,7 +355,7 @@ export default function ComplaintForm() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
+              <Button type="submit" className="w-full" disabled={isSubmitting || userLoading}>
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Submitting...
