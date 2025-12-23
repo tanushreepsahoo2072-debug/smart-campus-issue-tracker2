@@ -14,7 +14,7 @@ export default function AuthorityDashboardPage() {
             <p className="text-sm text-muted-foreground whitespace-pre-wrap font-mono">
 {`⚠️ Mandatory Constraints (Must Not Be Violated):
 
-CampusConnect’s and civicconnect output functionality must remain fully intact.
+CampusConnect’s functionality must remain fully intact.
 
 Do NOT modify or remove:
 
