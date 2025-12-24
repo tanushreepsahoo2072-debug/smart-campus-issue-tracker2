@@ -31,8 +31,10 @@ type ComplaintData = z.infer<typeof complaintSchema>;
 const LOCATION_OFFSET = 0.001; // For proximity check
 
 async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
+  console.log(`[AI_STEP] Starting analysis for issue: ${issueId}`);
   try {
     // 1. Find candidate issues for deduplication
+    console.log('[AI_STEP] 1. Finding candidate issues for deduplication...');
     const candidates: any[] = [];
     if (data.latitude && data.longitude) {
       const lat = data.latitude;
@@ -41,6 +43,8 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
       const latMax = lat + LOCATION_OFFSET;
       const lonMin = lon - LOCATION_OFFSET;
       const lonMax = lon + LOCATION_OFFSET;
+
+      console.log(`[AI_DEBUG] Bounding Box: lat(${latMin}-${latMax}), lon(${lonMin}-${lonMax})`);
 
       const issuesRef = firestoreAdmin.collection('issues');
       const querySnapshot = await issuesRef
@@ -60,9 +64,11 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
             });
         }
       });
+      console.log(`[AI_DEBUG] Found ${candidates.length} candidates for deduplication.`);
     }
 
     // 2. Prepare for Gemini API call
+    console.log('[AI_STEP] 2. Preparing prompt for Gemini API call...');
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const nearbyIssuesText = candidates.length
@@ -91,6 +97,7 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
       
       Return ONLY a JSON object in this format: { "is_spam": boolean, "is_duplicate": boolean, "duplicate_id": string | null, "category": "string", "priority": "string", "AI_COMMENT": "1-sentence summary of findings", "status_update": "Open" | "Denied" }
     `;
+    console.log('[AI_DEBUG] Constructed Prompt:', prompt);
 
     const imageParts = data.imageDataUris?.map(uri => {
       const [header, base64Data] = uri.split(',');
@@ -98,18 +105,26 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
       if (!mimeType || !base64Data) throw new Error('Invalid Data URI');
       return { inlineData: { data: base64Data, mimeType } };
     }) || [];
+    
+    console.log(`[AI_DEBUG] Prepared ${imageParts.length} image parts for the API call.`);
 
     // 3. Call Gemini API
+    console.log('[AI_STEP] 3. Calling Gemini API...');
     const result = await model.generateContent([prompt, ...imageParts]);
     const response = await result.response;
     const jsonString = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    console.log('[AI_DEBUG] Raw response from Gemini:', jsonString);
+
     const aiResult = JSON.parse(jsonString);
+    console.log('[AI_DEBUG] Parsed AI Result:', aiResult);
 
 
     // 4. Process AI result and update Firestore
+    console.log('[AI_STEP] 4. Processing AI result and updating Firestore...');
     const issueRef = firestoreAdmin.collection('issues').doc(issueId);
 
     if (aiResult.is_spam || aiResult.status_update === 'Denied') {
+      console.log('[AI_DECISION] Complaint flagged as SPAM or DENIED.');
       await issueRef.update({
         currentStatus: 'Denied',
         is_spam: true,
@@ -117,11 +132,13 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
         AI: 1,
       });
     } else if (aiResult.is_duplicate && aiResult.duplicate_id) {
+        console.log(`[AI_DECISION] Complaint flagged as DUPLICATE of ${aiResult.duplicate_id}.`);
         const originalIssueRef = firestoreAdmin.collection('issues').doc(aiResult.duplicate_id);
       
         await firestoreAdmin.runTransaction(async (transaction) => {
             const originalDoc = await transaction.get(originalIssueRef);
             if (!originalDoc.exists) {
+                console.log('[AI_DEBUG] Original duplicate not found. Treating as a new unique issue.');
                 // If original doc is gone, treat as unique issue
                 transaction.update(issueRef, {
                     category: aiResult.category,
@@ -137,6 +154,8 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
             const newFrequency = (originalData.frequency || 1) + 1;
             let newPriority = originalData.ai_priority;
             
+            console.log(`[AI_DEBUG] Original issue has frequency ${originalData.frequency}. New frequency: ${newFrequency}`);
+            
             transaction.update(issueRef, {
                 is_spam: true, // Mark as duplicate
                 merged_into: aiResult.duplicate_id,
@@ -149,14 +168,18 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
                 const currentPriorityIndex = priorityOrder.indexOf(newPriority);
                 if (currentPriorityIndex < priorityOrder.length - 1) {
                     newPriority = priorityOrder[currentPriorityIndex + 1];
+                    console.log(`[AI_ACTION] Priority boosted to ${newPriority}. Resetting frequency.`);
+                    transaction.update(originalIssueRef, { frequency: 0, ai_priority: newPriority });
+                } else {
+                    transaction.update(originalIssueRef, { frequency: newFrequency });
                 }
-                transaction.update(originalIssueRef, { frequency: 0, ai_priority: newPriority });
             } else {
                 transaction.update(originalIssueRef, { frequency: newFrequency });
             }
         });
 
     } else {
+      console.log('[AI_DECISION] Complaint is VALID and UNIQUE.');
       await issueRef.update({
         category: aiResult.category,
         ai_priority: aiResult.priority,
@@ -165,6 +188,7 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
         AI: 1,
       });
     }
+    console.log(`[AI_STEP] Successfully processed and updated issue: ${issueId}`);
   } catch (error) {
     console.error('Error in AI analysis background task:', error);
     await firestoreAdmin.collection('issues').doc(issueId).update({
