@@ -49,10 +49,6 @@
           "type": "string",
           "description": "The category of the complaint (e.g., Road Maintenance, Waste Management)."
         },
-        "priority": {
-          "type": "string",
-          "description": "The priority level of the complaint (e.g., Low, Medium, High)."
-        },
         "location": {
           "type": "string",
           "description": "GPS coordinates of the incident location."
@@ -66,10 +62,6 @@
           "type": "string",
           "format": "date-time",
           "description": "The server timestamp when the complaint was submitted."
-        },
-        "createdBy": {
-          "type": "string",
-          "description": "The UID of the user who reported the issue."
         },
         "assignedTo": {
             "type": "string",
@@ -109,5 +101,3 @@
     }
   }
 }
-
-    

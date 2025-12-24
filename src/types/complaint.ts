@@ -5,10 +5,8 @@ export type Complaint = {
   description: string;
   location: string;
   email: string;
-  createdBy: string;
   imageUrls: string[];
   category: 'Maintenance' | 'Safety' | 'IT Support' | 'Landscaping' | 'Facilities' | 'Other' | 'Electrical' | 'Plumbing' | '';
-  priority: 'Not-Assigned' | 'Low' | 'Medium' | 'High' | 'Critical';
   currentStatus: 'Open' | 'In Progress' | 'Resolved' | 'Denied' | 'Pending';
   assignedTo: string;
   frequency: number;

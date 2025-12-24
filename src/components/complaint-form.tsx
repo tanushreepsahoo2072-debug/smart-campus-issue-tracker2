@@ -40,7 +40,6 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Please fetch your GPS location.'),
   email: z.string().email('A valid email is required.'),
-  createdBy: z.string().optional(),
   attachments: z
     .array(z.instanceof(File))
     .max(MAX_FILES, `You can only upload a maximum of ${MAX_FILES} files.`)
@@ -85,14 +84,12 @@ export default function ComplaintForm() {
       description: '',
       location: '',
       email: '',
-      createdBy: '',
       attachments: [],
     },
   });
 
   useEffect(() => {
     if (user) {
-        if(user.uid) form.setValue('createdBy', user.uid);
         if(user.email) form.setValue('email', user.email);
     }
   }, [user, form]);
@@ -212,7 +209,6 @@ export default function ComplaintForm() {
         description: values.description,
         location: values.location,
         email: values.email,
-        createdBy: values.createdBy,
         imageUrls: imageUrls,
         imageDataUris: imageDataUris,
       };

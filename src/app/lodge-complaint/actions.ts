@@ -21,7 +21,6 @@ const complaintSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   location: z.string().min(1, 'Location is required.'),
   email: z.string().email(),
-  createdBy: z.string().optional(),
   imageUrls: z.array(z.string().url()).optional(),
   imageDataUris: z.array(z.string()).optional(), // Base64 image data
 });
@@ -191,7 +190,6 @@ export async function handleComplaintSubmission(
       location: parsed.data.location,
       email: parsed.data.email,
       imageUrls: parsed.data.imageUrls || [],
-      createdBy: parsed.data.createdBy || 'anonymous',
       createdAt: FieldValue.serverTimestamp(),
       
       // Default / pending fields
