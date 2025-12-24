@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { doc, onSnapshot, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 import type { Complaint } from '@/types/complaint';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import IssueMap from '@/components/authority/issue-map';
 
 import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -44,7 +45,6 @@ const priorityColorClass: { [key: string]: string } = {
 export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
   const params = use(paramsPromise);
   const firestore = useFirestore();
-  const router = useRouter();
   const { toast } = useToast();
   const [issue, setIssue] = useState<Complaint | null>(null);
   const [loading, setLoading] = useState(true);
@@ -183,6 +183,16 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                             )}
                         </div>
                     )}
+
+                    <Separator className="my-6" />
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
+                        <div className="h-80 w-full rounded-lg overflow-hidden border">
+                           <IssueMap location={issue.location} />
+                        </div>
+                    </div>
+
                 </CardContent>
                  <CardFooter className="bg-muted/50 p-4">
                     <div className="flex w-full items-center justify-end text-xs text-muted-foreground">
