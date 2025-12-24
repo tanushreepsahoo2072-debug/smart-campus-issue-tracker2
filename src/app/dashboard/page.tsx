@@ -1,18 +1,8 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FilePlus2, Search, TestTube2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { FilePlus2, Search } from 'lucide-react';
 
 export default function DashboardPage() {
-  const testData = {
-    title: 'Pothole',
-    description: 'This is a dangerous pothole.',
-    latitude: '28.6139',
-    longitude: '77.2090',
-    email: 'h@gmail.com'
-  };
-  const queryParams = new URLSearchParams(testData).toString();
-
   return (
     <div className="flex flex-1 flex-col">
       <section className="container flex flex-col items-center justify-center gap-6 py-8 md:py-12">
@@ -55,13 +45,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </Link>
-        </div>
-        <div className="mt-6">
-          <Button asChild>
-            <Link href={`/lodge-complaint?${queryParams}`}>
-              <TestTube2 className="mr-2 h-4 w-4" /> Test Autofill
-            </Link>
-          </Button>
         </div>
       </section>
     </div>
