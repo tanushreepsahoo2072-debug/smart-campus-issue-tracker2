@@ -32,6 +32,7 @@ const statusIcons: { [key: string]: React.ReactNode } = {
   "In Progress": <Wrench className="h-4 w-4" />,
   Resolved: <CheckCircle className="h-4 w-4 text-green-500" />,
   Denied: <XCircle className="h-4 w-4 text-destructive" />,
+  Pending: <LoaderCircle className="h-4 w-4 animate-spin" />,
 };
 
 const priorityColorClass: { [key: string]: string } = {
@@ -43,8 +44,8 @@ const priorityColorClass: { [key: string]: string } = {
 };
 
 function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
-  const isDenied = complaint.status === 'Denied';
-  const showAiComment = isDenied && complaint.AI_COMMENT && !complaint.admin_comments;
+  const isDenied = complaint.currentStatus === 'Denied';
+  const showAiComment = isDenied && complaint.AI_COMMENT && !complaint.updatedAt;
 
   return (
     <Card className="flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
@@ -64,10 +65,10 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
             <Badge
                 className={cn(
                 "whitespace-nowrap",
-                priorityColorClass[complaint.priority]
+                priorityColorClass[complaint.ai_priority || 'Not-Assigned']
                 )}
             >
-                {complaint.priority}
+                {complaint.ai_priority || 'Not-Assigned'}
             </Badge>
         </div>
         <p className="text-sm text-muted-foreground pt-1">
@@ -87,8 +88,8 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
         <p className="text-muted-foreground">{complaint.description}</p>
         
         <div className="flex items-center text-sm">
-            {statusIcons[complaint.status]}
-            <span className="ml-2 font-medium">{complaint.status}</span>
+            {statusIcons[complaint.currentStatus]}
+            <span className="ml-2 font-medium">{complaint.currentStatus}</span>
         </div>
 
         {showAiComment && (
@@ -141,8 +142,11 @@ export default function TrackStatusPage() {
     const unsubscribe = onSnapshot(docRef, async (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            if (data.AI === 1) {
-                // AI processing is done, fetch full details
+            // AI is still processing
+            if (data.AI === 0) {
+                setStatus('processing');
+            } else {
+                 // AI processing is done, fetch full details
                 const result = await fetchComplaintById(currentTrackId);
                 if (result.status === 'success' && result.data) {
                     setComplaint(result.data);
@@ -151,9 +155,6 @@ export default function TrackStatusPage() {
                     setErrorMessage(result.error || 'An unexpected error occurred.');
                     setStatus('error');
                 }
-            } else {
-                // AI is still processing
-                setStatus('processing');
             }
         } else {
             setStatus('not-found');

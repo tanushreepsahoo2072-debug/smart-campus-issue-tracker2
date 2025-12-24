@@ -2,11 +2,20 @@
 'use server';
 
 import { z } from 'zod';
-import { initializeFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { initializeApp as initializeFirebaseAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const { firestore } = initializeFirebase();
+// Initialize Firebase Admin SDK
+if (!getAdminApps().length) {
+  initializeFirebaseAdminApp();
+}
+const firestoreAdmin = getFirestore();
 
+// Initialize Google AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+
+// Validation schema for incoming data from the client
 const complaintSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
@@ -14,9 +23,156 @@ const complaintSchema = z.object({
   email: z.string().email(),
   createdBy: z.string().optional(),
   imageUrls: z.array(z.string().url()).optional(),
+  imageDataUris: z.array(z.string()).optional(), // Base64 image data
 });
 
 type ComplaintData = z.infer<typeof complaintSchema>;
+
+const LOCATION_OFFSET = 0.001; // For proximity check
+
+async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
+  try {
+    // 1. Find candidate issues for deduplication
+    const candidates: any[] = [];
+    if (data.location) {
+      const [lat, lon] = data.location.split(',').map(parseFloat);
+      const latMin = lat - LOCATION_OFFSET;
+      const latMax = lat + LOCATION_OFFSET;
+      const lonMin = lon - LOCATION_OFFSET;
+      const lonMax = lon + LOCATION_OFFSET;
+
+      const issuesRef = firestoreAdmin.collection('issues');
+      const querySnapshot = await issuesRef
+        .where('currentStatus', 'in', ['Open', 'In Progress'])
+        .get();
+
+      querySnapshot.forEach(doc => {
+        const docData = doc.data();
+        if (doc.id !== issueId && docData.location) {
+          const [docLat, docLon] = docData.location.split(',').map(parseFloat);
+          if (docLat > latMin && docLat < latMax && docLon > lonMin && docLon < lonMax) {
+            candidates.push({
+              id: doc.id,
+              title: docData.title,
+              description: docData.description,
+              category: docData.category,
+            });
+          }
+        }
+      });
+    }
+
+    // 2. Prepare for Gemini API call
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const nearbyIssuesText = candidates.length
+      ? candidates.map(c => `- ID: ${c.id}, Title: "${c.title}", Category: ${c.category}`).join('\n')
+      : 'No nearby issues were found.';
+
+    const prompt = `
+      You are an automated Campus Maintenance Dispatcher. Your goal is to process a new incident report and determine its validity and priority.
+      
+      New Complaint Details:
+      - Title: ${data.title}
+      - Description: ${data.description}
+
+      Nearby Issues to check for duplicates:
+      ${nearbyIssuesText}
+
+      Perform the following tasks and return your decision ONLY in the specified JSON format.
+
+      Task 1: Safety & Authenticity. Check the image. If it is offensive, a meme, a stock photo, clearly AI-generated, or completely unrelated to a plausible campus maintenance issue, set "is_spam" to true and "status_update" to "Denied". Provide a reason in "AI_COMMENT".
+
+      Task 2: Deduplication. Compare the new complaint's image and description to the 'Nearby Issues' list. If it reports the exact same physical item (e.g., the same broken window, not just another broken window), set "is_duplicate" to true and "duplicate_id" to the ID of the original issue.
+
+      Task 3: Classification. If the report is valid and unique, assign a "category" from this list: [Maintenance, Safety, IT Support, Landscaping, Facilities, Other, Electrical, Plumbing].
+
+      Task 4: Severity. If valid and unique, assign a "priority" from this list: [Critical, High, Medium, Low]. Use 'Critical' only for immediate life-safety risks (e.g., sparking wires, major flooding visible in the image). Base your decision on the visual evidence.
+      
+      Return ONLY a JSON object in this format: { "is_spam": boolean, "is_duplicate": boolean, "duplicate_id": string | null, "category": "string", "priority": "string", "AI_COMMENT": "1-sentence summary of findings", "status_update": "Open" | "Denied" }
+    `;
+
+    const imageParts = data.imageDataUris?.map(uri => {
+      const [header, base64Data] = uri.split(',');
+      const mimeType = header.match(/:(.*?);/)?.[1];
+      if (!mimeType || !base64Data) throw new Error('Invalid Data URI');
+      return { inlineData: { data: base64Data, mimeType } };
+    }) || [];
+
+    // 3. Call Gemini API
+    const result = await model.generateContent([prompt, ...imageParts]);
+    const response = await result.response;
+    const jsonString = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    const aiResult = JSON.parse(jsonString);
+
+
+    // 4. Process AI result and update Firestore
+    const issueRef = firestoreAdmin.collection('issues').doc(issueId);
+
+    if (aiResult.is_spam || aiResult.status_update === 'Denied') {
+      await issueRef.update({
+        currentStatus: 'Denied',
+        is_spam: true,
+        AI_COMMENT: aiResult.AI_COMMENT,
+        AI: 1,
+      });
+    } else if (aiResult.is_duplicate && aiResult.duplicate_id) {
+        const originalIssueRef = firestoreAdmin.collection('issues').doc(aiResult.duplicate_id);
+      
+        await firestoreAdmin.runTransaction(async (transaction) => {
+            const originalDoc = await transaction.get(originalIssueRef);
+            if (!originalDoc.exists) {
+                // If original doc is gone, treat as unique issue
+                transaction.update(issueRef, {
+                    category: aiResult.category,
+                    ai_priority: aiResult.priority,
+                    currentStatus: 'Open',
+                    AI_COMMENT: 'Marked as duplicate but original was not found. Treated as new.',
+                    AI: 1,
+                });
+                return;
+            }
+
+            const originalData = originalDoc.data()!;
+            const newFrequency = (originalData.frequency || 1) + 1;
+            let newPriority = originalData.ai_priority;
+            
+            transaction.update(issueRef, {
+                is_spam: true, // Mark as duplicate
+                merged_into: aiResult.duplicate_id,
+                AI_COMMENT: aiResult.AI_COMMENT,
+                AI: 1,
+            });
+
+            if (newFrequency >= 5) {
+                const priorityOrder: string[] = ['Low', 'Medium', 'High', 'Critical'];
+                const currentPriorityIndex = priorityOrder.indexOf(newPriority);
+                if (currentPriorityIndex < priorityOrder.length - 1) {
+                    newPriority = priorityOrder[currentPriorityIndex + 1];
+                }
+                transaction.update(originalIssueRef, { frequency: 0, ai_priority: newPriority });
+            } else {
+                transaction.update(originalIssueRef, { frequency: newFrequency });
+            }
+        });
+
+    } else {
+      await issueRef.update({
+        category: aiResult.category,
+        ai_priority: aiResult.priority,
+        currentStatus: 'Open',
+        AI_COMMENT: aiResult.AI_COMMENT,
+        AI: 1,
+      });
+    }
+  } catch (error) {
+    console.error('Error in AI analysis background task:', error);
+    await firestoreAdmin.collection('issues').doc(issueId).update({
+      AI: -1, // Signify an AI processing error
+      AI_COMMENT: 'AI analysis failed. Please review manually.',
+    });
+  }
+}
 
 export async function handleComplaintSubmission(
   data: ComplaintData
@@ -25,35 +181,42 @@ export async function handleComplaintSubmission(
     const parsed = complaintSchema.safeParse(data);
 
     if (!parsed.success) {
-      const firstError =
-        Object.values(parsed.error.flatten().fieldErrors)[0]?.[0] ||
-        'Invalid form data provided.';
-      throw new Error(firstError);
+      throw new Error('Invalid form data.');
     }
-    
-    const complaintDocRef = await addDoc(collection(firestore, 'issues'), {
-      ...parsed.data,
-      createdBy: parsed.data.createdBy || 'anonymous',
+
+    // 1. Create the initial document
+    const complaintDocRef = await firestoreAdmin.collection('issues').add({
+      title: parsed.data.title,
+      description: parsed.data.description,
+      location: parsed.data.location,
+      email: parsed.data.email,
       imageUrls: parsed.data.imageUrls || [],
+      createdBy: parsed.data.createdBy || 'anonymous',
+      createdAt: FieldValue.serverTimestamp(),
+      
+      // Default / pending fields
+      currentStatus: 'Pending',
       category: '',
-      priority: 'Not-Assigned',
-      status: 'Open',
+      ai_priority: 'Not-Assigned',
       assignedTo: '',
       frequency: 1,
-      createdAt: serverTimestamp(),
       updatedAt: null,
       admin_comments: '',
       merged_into: null,
       is_spam: false,
       AI_COMMENT: '',
-      AI: 0,
+      AI: 0, // Mark as pending AI analysis
     });
 
+    // 2. Kick off AI analysis in the background (fire-and-forget)
+    analyzeComplaintWithAI(complaintDocRef.id, parsed.data);
+
+    // 3. Immediately return success to the client
     return { success: true, issueId: complaintDocRef.id };
+
   } catch (error) {
     console.error('Error handling complaint submission:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unknown server error occurred.';
+    const errorMessage = error instanceof Error ? error.message : 'An unknown server error occurred.';
     return { success: false, error: errorMessage };
   }
 }

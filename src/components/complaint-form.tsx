@@ -58,6 +58,17 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Helper to convert a file to a Base64 Data URI
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
+
 export default function ComplaintForm() {
   const { user } = useUser();
   const { toast } = useToast();
@@ -80,8 +91,9 @@ export default function ComplaintForm() {
   });
 
   useEffect(() => {
-    if (user && user.uid) {
-      form.setValue('createdBy', user.uid);
+    if (user) {
+        if(user.uid) form.setValue('createdBy', user.uid);
+        if(user.email) form.setValue('email', user.email);
     }
   }, [user, form]);
 
@@ -157,9 +169,7 @@ export default function ComplaintForm() {
       throw new Error('ImgBB API key is not configured.');
     }
     
-    if (files.length === 0) {
-      return [];
-    }
+    if (files.length === 0) return [];
 
     toast({ title: 'Uploading images...', description: 'Please wait.' });
 
@@ -188,7 +198,14 @@ export default function ComplaintForm() {
     setIsSubmitting(true);
 
     try {
-      const imageUrls = values.attachments ? await uploadFilesToImgBB(values.attachments) : [];
+      // Parallel image processing
+      const imgbbUploadPromise = values.attachments ? uploadFilesToImgBB(values.attachments) : Promise.resolve([]);
+      const dataUriConvertPromise = values.attachments ? Promise.all(values.attachments.map(fileToDataUri)) : Promise.resolve([]);
+      
+      const [imageUrls, imageDataUris] = await Promise.all([
+        imgbbUploadPromise,
+        dataUriConvertPromise
+      ]);
 
       const complaintData = {
         title: values.title,
@@ -197,6 +214,7 @@ export default function ComplaintForm() {
         email: values.email,
         createdBy: values.createdBy,
         imageUrls: imageUrls,
+        imageDataUris: imageDataUris,
       };
       
       const result = await handleComplaintSubmission(complaintData);

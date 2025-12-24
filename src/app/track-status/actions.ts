@@ -3,24 +3,11 @@
 
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
+import type { Complaint } from '@/types/complaint';
 
 const { firestore } = initializeFirebase();
 
-export type ComplaintDetails = {
-  id: string;
-  title: string;
-  description: string;
-  priority: 'Critical' | 'High' | 'Medium' | 'Low' | 'Not-Assigned';
-  status: 'Open' | 'In Progress' | 'Resolved' | 'Denied';
-  admin_comments?: string;
-  imageUrls: string[];
-  createdAt: string; // ISO string
-  updatedAt?: string; // ISO string
-  AI: number;
-  is_spam: boolean;
-  merged_into: string | null;
-  AI_COMMENT: string;
-};
+export type ComplaintDetails = Complaint;
 
 type FetchResult = {
   status: 'success' | 'not-found' | 'error' | 'processing';
@@ -33,20 +20,19 @@ function formatTimestamp(timestamp: any): string {
     if (timestamp instanceof Timestamp) {
         return timestamp.toDate().toISOString();
     }
-    // Handle plain object format from Firestore, which can happen with server actions
     if (timestamp._seconds) { 
         return new Date(timestamp._seconds * 1000).toISOString();
     }
-    // Fallback for string dates
     return new Date(timestamp).toISOString();
 }
 
 function formatUpdateTimestamp(timestamp: any): string | undefined {
     if (!timestamp) return undefined;
-    const date = (timestamp instanceof Timestamp) ? timestamp.toDate() : new Date(timestamp);
+    const date = (timestamp instanceof Timestamp) ? timestamp.toDate() : (timestamp._seconds ? new Date(timestamp._seconds * 1000) : new Date(timestamp));
     if (isNaN(date.getTime())) return undefined;
     return `Updated ${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
+
 
 async function fetchComplaintData(id: string): Promise<any> {
     const docRef = doc(firestore, 'issues', id);
@@ -70,7 +56,7 @@ export async function fetchComplaintById(id: string): Promise<FetchResult> {
     }
     
     // If AI processing is not done, return a special status
-    if (originalData.AI !== 1) {
+    if (originalData.AI === 0) {
       return { status: 'processing' };
     }
 
@@ -83,8 +69,8 @@ export async function fetchComplaintById(id: string): Promise<FetchResult> {
             // Combine original submission details with the status of the main issue
             displayData = {
                 ...originalData, // Keep original title, desc, images
-                status: mergedData.status,
-                priority: mergedData.priority,
+                currentStatus: mergedData.currentStatus,
+                ai_priority: mergedData.ai_priority,
                 admin_comments: mergedData.admin_comments,
                 updatedAt: mergedData.updatedAt,
             };
@@ -95,16 +81,23 @@ export async function fetchComplaintById(id: string): Promise<FetchResult> {
       id: displayData.id,
       title: displayData.title || 'No Title',
       description: displayData.description || 'No Description',
-      priority: displayData.priority || 'Not-Assigned',
-      status: displayData.status || 'Open',
-      admin_comments: displayData.admin_comments || '',
+      location: displayData.location || '',
+      email: displayData.email || '',
+      createdBy: displayData.createdBy || '',
       imageUrls: displayData.imageUrls || [],
+      category: displayData.category || '',
+      priority: displayData.priority || 'Not-Assigned',
+      currentStatus: displayData.currentStatus || 'Pending',
+      assignedTo: displayData.assignedTo || '',
+      frequency: displayData.frequency || 1,
       createdAt: displayData.createdAt ? formatTimestamp(displayData.createdAt) : '',
-      updatedAt: displayData.updatedAt ? formatUpdateTimestamp(displayData.updatedAt) : undefined,
-      AI: displayData.AI || 0,
+      updatedAt: displayData.updatedAt ? formatUpdateTimestamp(displayData.updatedAt) : null,
+      admin_comments: displayData.admin_comments || '',
       is_spam: originalData.is_spam, // Always reflect original spam status
-      merged_into: originalData.merged_into,
+      AI: displayData.AI || 0,
       AI_COMMENT: originalData.AI_COMMENT || '',
+      merged_into: originalData.merged_into,
+      ai_priority: displayData.ai_priority || 'Not-Assigned',
     };
 
     return { status: 'success', data: complaintDetails };
