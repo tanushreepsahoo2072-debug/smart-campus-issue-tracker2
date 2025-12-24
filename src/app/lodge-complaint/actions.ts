@@ -232,14 +232,15 @@ export async function handleComplaintSubmission(
       AI: 0, // Mark as pending AI analysis
     });
 
-    // 2. Immediately return success to the client
     const issueId = complaintDocRef.id;
-    const response = { success: true, issueId: issueId };
 
-    // 3. Kick off AI analysis in the background (fire-and-forget).
-    // This happens *after* the client has received their success message.
+    // 2. Kick off AI analysis in the background (fire-and-forget).
+    // This happens *after* the initial document is created.
+    // We do NOT `await` this, so the function returns immediately.
     analyzeComplaintWithAI(issueId, parsed.data);
 
+    // 3. Immediately return success to the client
+    const response = { success: true, issueId: issueId };
     return response;
 
   } catch (error) {
@@ -248,3 +249,5 @@ export async function handleComplaintSubmission(
     return { success: false, error: errorMessage };
   }
 }
+
+    
