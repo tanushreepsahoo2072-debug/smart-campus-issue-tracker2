@@ -9,17 +9,31 @@ interface IssueMapProps {
 
 export default function IssueMap({ location }: IssueMapProps) {
   const mapImageUrl = useMemo(() => {
-    if (!location) {
+    if (!location || !location.includes(',')) {
       return "https://placehold.co/600x400?text=No+Location+Provided";
     }
-    // This is a placeholder static map. 
-    // For a real interactive map, a Google Maps API key is needed.
+    
+    // Using a static map provider that constructs a map from coordinates.
+    // This is a placeholder for visualization and does not require an API key for basic use.
+    // For a real interactive map, a service like Google Maps with an API key would be necessary.
     const [lat, lng] = location.split(',');
-    // Using a static map provider that doesn't strictly require an API key for basic use,
-    // but in a real app, you'd use a service with an API key.
-    return `https://images.unsplash.com/photo-1579548122204-910d6e7c2514?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtYXAlMjBwbGFjZWhvbGRlcnxlbnwwfHx8fDE3NjYyMDM0NTF8MA&ixlib=rb-4.1.0&q=80&w=1080`;
+    
+    // Using MapQuest static map API as it allows basic marker display without a key for limited use.
+    // A proper key would be needed for production.
+    const apiKey = 'YOUR_STATIC_MAP_API_KEY'; // In a real app, this would be an env variable.
+    return `https://www.mapquestapi.com/staticmap/v5/map?key=${apiKey}&center=${lat},${lng}&zoom=15&size=600,400@2x&markers=marker-red-md-${lat},${lng}`;
 
   }, [location]);
+
+  if (!location || !location.includes(',')) {
+    return (
+        <div className="relative h-full w-full bg-muted flex items-center justify-center">
+            <div className="rounded-lg bg-background/80 p-3 text-center text-sm font-semibold text-foreground backdrop-blur-sm">
+                <p>Location Not Provided</p>
+            </div>
+        </div>
+    )
+  }
 
   return (
     <div className="relative h-full w-full bg-muted">
@@ -28,12 +42,16 @@ export default function IssueMap({ location }: IssueMapProps) {
         alt="Map showing issue location"
         fill
         className="object-cover"
-        data-ai-hint="map placeholder"
+        data-ai-hint="map location"
+        onError={(e) => {
+            // Fallback for when the map API fails (e.g. key missing)
+            e.currentTarget.src = "https://placehold.co/600x400?text=Map+Preview+Unavailable";
+        }}
       />
        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
         <div className="rounded-lg bg-background/80 p-3 text-center text-sm font-semibold text-foreground backdrop-blur-sm">
           <p>Static Map Preview</p>
-          <p className="text-xs font-normal">Location: {location || 'N/A'}</p>
+          <p className="text-xs font-normal">Location: {location}</p>
         </div>
       </div>
     </div>
