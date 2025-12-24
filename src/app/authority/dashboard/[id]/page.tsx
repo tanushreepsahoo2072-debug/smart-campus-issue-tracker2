@@ -2,8 +2,8 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { doc, onSnapshot, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import type { Complaint } from '@/types/complaint';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
