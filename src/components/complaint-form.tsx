@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { handleComplaintSubmission } from '@/app/lodge-complaint/actions';
 import { useUser } from '@/firebase';
+import { useSearchParams } from 'next/navigation';
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -72,6 +73,8 @@ const fileToDataUri = (file: File): Promise<string> => {
 export default function ComplaintForm() {
   const { user } = useUser();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -89,10 +92,48 @@ export default function ComplaintForm() {
   });
 
   useEffect(() => {
-    if (user) {
+    // Autofill from URL params
+    const title = searchParams.get('title');
+    const description = searchParams.get('description');
+    const latitude = searchParams.get('latitude');
+    const longitude = searchParams.get('longitude');
+    const email = searchParams.get('email');
+
+    if (title) form.setValue('title', title);
+    if (description) form.setValue('description', description);
+    if (latitude) form.setValue('latitude', parseFloat(latitude));
+    if (longitude) form.setValue('longitude', parseFloat(longitude));
+    if (email) form.setValue('email', email);
+
+    // If there's an image URL in params, fetch and set it
+    const imageUrl = searchParams.get('imageUrl');
+    if (imageUrl) {
+        const fetchImage = async () => {
+            try {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const file = new File([blob], "pothole.jpg", { type: blob.type });
+                setSelectedFiles([file]);
+                form.setValue('attachments', [file], { shouldValidate: true });
+            } catch (error) {
+                console.error("Failed to fetch test image:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Failed to load test image",
+                    description: "Could not automatically load the test image."
+                });
+            }
+        };
+        fetchImage();
+    }
+
+  }, [searchParams, form, toast]);
+
+  useEffect(() => {
+    if (user && !searchParams.get('email')) { // Don't override autofill email
         if(user.email) form.setValue('email', user.email);
     }
-  }, [user, form]);
+  }, [user, form, searchParams]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
