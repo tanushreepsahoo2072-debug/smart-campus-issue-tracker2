@@ -2,15 +2,16 @@
 'use server';
 
 import { z } from 'zod';
-import { initializeApp as initializeFirebaseAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+//import { initializeApp as initializeFirebaseAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
+//import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { initializeFirebase } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc, runTransaction  } from 'firebase/firestore';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Firebase Admin SDK
-if (!getAdminApps().length) {
-  initializeFirebaseAdminApp();
-}
-const firestoreAdmin = getFirestore();
+
+//const firestoreAdmin = getFirestore();
+const { firestore } = initializeFirebase();
+
 
 // Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
@@ -46,12 +47,24 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
 
       console.log(`[AI_DEBUG] Bounding Box: lat(${latMin}-${latMax}), lon(${lonMin}-${lonMax})`);
 
-      const issuesRef = firestoreAdmin.collection('issues');
-      const querySnapshot = await issuesRef
-        .where('currentStatus', 'in', ['Open', 'In Progress'])
-        .where('latitude', '>=', latMin)
-        .where('latitude', '<=', latMax)
-        .get();
+      //const issuesRef = firestoreAdmin.collection('issues');
+      const issuesRef = collection(firestore, 'issues');
+      //const querySnapshot = await issuesRef
+      //  .where('currentStatus', 'in', ['Open', 'In Progress'])
+      //  .where('latitude', '>=', latMin)
+      //  .where('latitude', '<=', latMax)
+      //  .get();
+        
+
+      const q = query(
+        issuesRef,
+        where('currentStatus', 'in', ['Open', 'In Progress']),
+        where('latitude', '>=', latMin),
+        where('latitude', '<=', latMax)
+      );
+        
+      const querySnapshot = await getDocs(q);
+          
 
       querySnapshot.forEach(doc => {
         const docData = doc.data();
@@ -121,11 +134,11 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
 
     // 4. Process AI result and update Firestore
     console.log('[AI_STEP] 4. Processing AI result and updating Firestore...');
-    const issueRef = firestoreAdmin.collection('issues').doc(issueId);
+    const issueRef = doc(firestore, 'issues', issueId);
 
     if (aiResult.is_spam || aiResult.status_update === 'Denied') {
       console.log('[AI_DECISION] Complaint flagged as SPAM or DENIED.');
-      await issueRef.update({
+      await updateDoc(issueRef, {  
         currentStatus: 'Denied',
         is_spam: true,
         AI_COMMENT: aiResult.AI_COMMENT,
@@ -133,9 +146,9 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
       });
     } else if (aiResult.is_duplicate && aiResult.duplicate_id) {
         console.log(`[AI_DECISION] Complaint flagged as DUPLICATE of ${aiResult.duplicate_id}.`);
-        const originalIssueRef = firestoreAdmin.collection('issues').doc(aiResult.duplicate_id);
+        const originalIssueRef = doc(firestore,'issues',aiResult.duplicate_id);
       
-        await firestoreAdmin.runTransaction(async (transaction) => {
+        await runTransaction(firestore, async (transaction) => {
             const originalDoc = await transaction.get(originalIssueRef);
             if (!originalDoc.exists) {
                 console.log('[AI_DEBUG] Original duplicate not found. Treating as a new unique issue.');
@@ -180,7 +193,7 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
 
     } else {
       console.log('[AI_DECISION] Complaint is VALID and UNIQUE.');
-      await issueRef.update({
+      await updateDoc(issueRef,{
         category: aiResult.category,
         ai_priority: aiResult.priority,
         currentStatus: 'Open',
@@ -191,9 +204,14 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
     console.log(`[AI_STEP] Successfully processed and updated issue: ${issueId}`);
   } catch (error) {
     console.error('Error in AI analysis background task:', error);
-    await firestoreAdmin.collection('issues').doc(issueId).update({
+    const issueRef = doc(firestore, 'issues', issueId);
+    await updateDoc(issueRef, {
       AI: -1, // Signify an AI processing error
-      AI_COMMENT: 'AI analysis failed. Please review manually.',
+      AI_COMMENT: {
+        message: error?.message || 'Unknown error',
+        stack: error?.stack || null,
+        name: error?.name || null,
+      },
     });
   }
 }
@@ -209,14 +227,18 @@ export async function handleComplaintSubmission(
     }
 
     // 1. Create the initial document in Firestore
-    const complaintDocRef = await firestoreAdmin.collection('issues').add({
-      title: parsed.data.title,
-      description: parsed.data.description,
-      latitude: parsed.data.latitude,
-      longitude: parsed.data.longitude,
-      email: parsed.data.email,
-      imageUrls: parsed.data.imageUrls || [],
-      createdAt: FieldValue.serverTimestamp(),
+    const complaintDocRef = await addDoc(
+      collection(firestore, 'issues'),
+      {
+        title: parsed.data.title,
+        description: parsed.data.description,
+        latitude: parsed.data.latitude,
+        longitude: parsed.data.longitude,
+        email: parsed.data.email,
+        imageUrls: parsed.data.imageUrls || [],
+        createdAt: serverTimestamp(),
+      
+      
       
       // Default / pending fields
       currentStatus: 'Pending',
@@ -233,6 +255,7 @@ export async function handleComplaintSubmission(
     });
 
     const issueId = complaintDocRef.id;
+    
 
     // 2. Kick off AI analysis in the background (fire-and-forget).
     // This happens *after* the initial document is created.

@@ -414,8 +414,8 @@ export default function ComplaintForm() {
             <AlertDialogAction onClick={handleCopyToClipboard}>
               Copy Complaint ID
             </AlertDialogAction>
-            <AlertDialogAction asChild variant="outline" onClick={() => setShowSuccessDialog(false)}>
-              <button>Close</button>
+            <AlertDialogAction onClick={() => setShowSuccessDialog(false)}>
+              Close
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
