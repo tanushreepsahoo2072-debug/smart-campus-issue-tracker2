@@ -201,11 +201,15 @@ export default function ComplaintForm() {
       // Parallel image processing
       const imgbbUploadPromise = values.attachments ? uploadFilesToImgBB(values.attachments) : Promise.resolve([]);
       const dataUriConvertPromise = values.attachments ? Promise.all(values.attachments.map(fileToDataUri)) : Promise.resolve([]);
-      
+      console.log("img",imgbbUploadPromise)
+      console.log("imgur",dataUriConvertPromise)
       const [imageUrls, imageDataUris] = await Promise.all([
         imgbbUploadPromise,
         dataUriConvertPromise
       ]);
+      console.log("After")
+      console.log("img",imageUrls)
+      console.log("imgur",imageDataUris)
 
       const complaintData = {
         title: values.title,
@@ -216,9 +220,10 @@ export default function ComplaintForm() {
         imageUrls: imageUrls,
         imageDataUris: imageDataUris,
       };
+      console.log(complaintData)
       
       const result = await handleComplaintSubmission(complaintData);
-
+      console.log(result)
       if (result.success && result.issueId) {
         setSubmittedIssueId(result.issueId);
         setShowSuccessDialog(true);

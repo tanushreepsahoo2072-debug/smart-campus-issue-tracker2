@@ -208,7 +208,7 @@ export async function handleComplaintSubmission(
       throw new Error('Invalid form data.');
     }
 
-    // 1. Create the initial document
+    // 1. Create the initial document in Firestore
     const complaintDocRef = await firestoreAdmin.collection('issues').add({
       title: parsed.data.title,
       description: parsed.data.description,
@@ -232,11 +232,15 @@ export async function handleComplaintSubmission(
       AI: 0, // Mark as pending AI analysis
     });
 
-    // 2. Kick off AI analysis in the background (fire-and-forget)
-    analyzeComplaintWithAI(complaintDocRef.id, parsed.data);
+    // 2. Immediately return success to the client
+    const issueId = complaintDocRef.id;
+    const response = { success: true, issueId: issueId };
 
-    // 3. Immediately return success to the client
-    return { success: true, issueId: complaintDocRef.id };
+    // 3. Kick off AI analysis in the background (fire-and-forget).
+    // This happens *after* the client has received their success message.
+    analyzeComplaintWithAI(issueId, parsed.data);
+
+    return response;
 
   } catch (error) {
     console.error('Error handling complaint submission:', error);
