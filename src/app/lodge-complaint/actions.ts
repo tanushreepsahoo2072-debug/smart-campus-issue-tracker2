@@ -45,13 +45,13 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
       const issuesRef = firestoreAdmin.collection('issues');
       const querySnapshot = await issuesRef
         .where('currentStatus', 'in', ['Open', 'In Progress'])
-        .where('latitude', '>', latMin)
-        .where('latitude', '<', latMax)
+        .where('latitude', '>=', latMin)
+        .where('latitude', '<=', latMax)
         .get();
 
       querySnapshot.forEach(doc => {
         const docData = doc.data();
-        if (doc.id !== issueId && docData.longitude > lonMin && docData.longitude < lonMax) {
+        if (doc.id !== issueId && docData.longitude >= lonMin && docData.longitude <= lonMax) {
             candidates.push({
               id: doc.id,
               title: docData.title,
