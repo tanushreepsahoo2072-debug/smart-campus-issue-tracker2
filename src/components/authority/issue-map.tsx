@@ -1,54 +1,41 @@
 'use client';
 
+import Image from 'next/image';
 import { useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import { LoaderCircle } from 'lucide-react';
 
 interface IssueMapProps {
   location: string;
 }
 
-const containerStyle = {
-  width: '100%',
-  height: '100%',
-};
-
 export default function IssueMap({ location }: IssueMapProps) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-  });
+  const mapImageUrl = useMemo(() => {
+    if (!location) {
+      return "https://placehold.co/600x400?text=No+Location+Provided";
+    }
+    // This is a placeholder static map. 
+    // For a real interactive map, a Google Maps API key is needed.
+    const [lat, lng] = location.split(',');
+    // Using a static map provider that doesn't strictly require an API key for basic use,
+    // but in a real app, you'd use a service with an API key.
+    return `https://images.unsplash.com/photo-1579548122204-910d6e7c2514?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtYXAlMjBwbGFjZWhvbGRlcnxlbnwwfHx8fDE3NjYyMDM0NTF8MA&ixlib=rb-4.1.0&q=80&w=1080`;
 
-  const center = useMemo(() => {
-    if (!location) return { lat: 0, lng: 0 };
-    const [lat, lng] = location.split(',').map(Number);
-    if (isNaN(lat) || isNaN(lng)) return { lat: 0, lng: 0 };
-    return { lat, lng };
   }, [location]);
 
-  if (loadError) {
-    return (
-      <div className="flex h-full items-center justify-center bg-destructive/10 text-destructive">
-        <p>Error loading map. Please check the API key.</p>
-      </div>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="flex h-full items-center justify-center bg-muted">
-        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={center}
-      zoom={15}
-    >
-      <Marker position={center} />
-    </GoogleMap>
+    <div className="relative h-full w-full bg-muted">
+      <Image
+        src={mapImageUrl}
+        alt="Map showing issue location"
+        fill
+        className="object-cover"
+        data-ai-hint="map placeholder"
+      />
+       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+        <div className="rounded-lg bg-background/80 p-3 text-center text-sm font-semibold text-foreground backdrop-blur-sm">
+          <p>Static Map Preview</p>
+          <p className="text-xs font-normal">Location: {location || 'N/A'}</p>
+        </div>
+      </div>
+    </div>
   );
 }
