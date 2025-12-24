@@ -49,9 +49,13 @@
           "type": "string",
           "description": "The category of the complaint (e.g., Road Maintenance, Waste Management)."
         },
-        "location": {
-          "type": "string",
-          "description": "GPS coordinates of the incident location."
+        "latitude": {
+            "type": "number",
+            "description": "The latitude of the incident location."
+        },
+        "longitude": {
+            "type": "number",
+            "description": "The longitude of the incident location."
         },
         "currentStatus": {
           "type": "string",
@@ -80,7 +84,7 @@
           "description": "An array of URLs for images related to the complaint."
         }
       },
-      "required": ["email", "title", "description", "location", "currentStatus", "createdAt"]
+      "required": ["email", "title", "description", "latitude", "longitude", "currentStatus", "createdAt"]
     }
   },
   "auth": {

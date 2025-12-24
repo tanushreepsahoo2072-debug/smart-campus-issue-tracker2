@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, use } from 'react';
@@ -189,7 +190,7 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
                         <div className="h-64 w-full rounded-lg overflow-hidden border">
-                           <IssueMap location={issue.location} />
+                           <IssueMap latitude={issue.latitude} longitude={issue.longitude} />
                         </div>
                     </div>
 

@@ -3,7 +3,8 @@ export type Complaint = {
   id: string;
   title: string;
   description: string;
-  location: string;
+  latitude: number;
+  longitude: number;
   email: string;
   imageUrls: string[];
   category: 'Maintenance' | 'Safety' | 'IT Support' | 'Landscaping' | 'Facilities' | 'Other' | 'Electrical' | 'Plumbing' | '';

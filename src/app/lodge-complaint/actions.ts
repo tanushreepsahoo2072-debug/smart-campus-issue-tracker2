@@ -19,7 +19,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 const complaintSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
-  location: z.string().min(1, 'Location is required.'),
+  latitude: z.number(),
+  longitude: z.number(),
   email: z.string().email(),
   imageUrls: z.array(z.string().url()).optional(),
   imageDataUris: z.array(z.string()).optional(), // Base64 image data
@@ -33,8 +34,9 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
   try {
     // 1. Find candidate issues for deduplication
     const candidates: any[] = [];
-    if (data.location) {
-      const [lat, lon] = data.location.split(',').map(parseFloat);
+    if (data.latitude && data.longitude) {
+      const lat = data.latitude;
+      const lon = data.longitude;
       const latMin = lat - LOCATION_OFFSET;
       const latMax = lat + LOCATION_OFFSET;
       const lonMin = lon - LOCATION_OFFSET;
@@ -43,20 +45,19 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
       const issuesRef = firestoreAdmin.collection('issues');
       const querySnapshot = await issuesRef
         .where('currentStatus', 'in', ['Open', 'In Progress'])
+        .where('latitude', '>', latMin)
+        .where('latitude', '<', latMax)
         .get();
 
       querySnapshot.forEach(doc => {
         const docData = doc.data();
-        if (doc.id !== issueId && docData.location) {
-          const [docLat, docLon] = docData.location.split(',').map(parseFloat);
-          if (docLat > latMin && docLat < latMax && docLon > lonMin && docLon < lonMax) {
+        if (doc.id !== issueId && docData.longitude > lonMin && docData.longitude < lonMax) {
             candidates.push({
               id: doc.id,
               title: docData.title,
               description: docData.description,
               category: docData.category,
             });
-          }
         }
       });
     }
@@ -187,7 +188,8 @@ export async function handleComplaintSubmission(
     const complaintDocRef = await firestoreAdmin.collection('issues').add({
       title: parsed.data.title,
       description: parsed.data.description,
-      location: parsed.data.location,
+      latitude: parsed.data.latitude,
+      longitude: parsed.data.longitude,
       email: parsed.data.email,
       imageUrls: parsed.data.imageUrls || [],
       createdAt: FieldValue.serverTimestamp(),

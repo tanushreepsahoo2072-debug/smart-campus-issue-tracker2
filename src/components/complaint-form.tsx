@@ -38,7 +38,8 @@ const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
-  location: z.string().min(1, 'Please fetch your GPS location.'),
+  latitude: z.number({ required_error: 'Please fetch your GPS location.' }),
+  longitude: z.number({ required_error: 'Please fetch your GPS location.' }),
   email: z.string().email('A valid email is required.'),
   attachments: z
     .array(z.instanceof(File))
@@ -82,7 +83,6 @@ export default function ComplaintForm() {
     defaultValues: {
       title: '',
       description: '',
-      location: '',
       email: '',
       attachments: [],
     },
@@ -124,17 +124,17 @@ export default function ComplaintForm() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          const locationString = `${latitude}, ${longitude}`;
-          form.setValue('location', locationString, { shouldValidate: true });
+          form.setValue('latitude', latitude, { shouldValidate: true });
+          form.setValue('longitude', longitude, { shouldValidate: true });
           setIsFetchingLocation(false);
           toast({
             title: 'Location Fetched',
-            description: `Coordinates: ${locationString}`,
+            description: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
           });
         },
         (error) => {
           console.error(error);
-          form.setError('location', {
+          form.setError('latitude', {
             type: 'manual',
             message: 'Could not get location. Please enable location services.',
           });
@@ -147,7 +147,7 @@ export default function ComplaintForm() {
         }
       );
     } else {
-      form.setError('location', {
+      form.setError('latitude', {
         type: 'manual',
         message: 'Geolocation is not supported by your browser.',
       });
@@ -207,7 +207,8 @@ export default function ComplaintForm() {
       const complaintData = {
         title: values.title,
         description: values.description,
-        location: values.location,
+        latitude: values.latitude,
+        longitude: values.longitude,
         email: values.email,
         imageUrls: imageUrls,
         imageDataUris: imageDataUris,
@@ -301,33 +302,28 @@ export default function ComplaintForm() {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>GPS Location</FormLabel>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <Button type="button" onClick={handleFetchLocation} disabled={isFetchingLocation}>
-                        {isFetchingLocation ? (
-                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <MapPin className="mr-2 h-4 w-4" />
-                        )}
-                        Fetch Location
-                      </Button>
-                      {field.value && (
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {field.value}
-                        </span>
-                      )}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               
+              <FormItem>
+                <FormLabel>GPS Location</FormLabel>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Button type="button" onClick={handleFetchLocation} disabled={isFetchingLocation}>
+                    {isFetchingLocation ? (
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <MapPin className="mr-2 h-4 w-4" />
+                    )}
+                    Fetch Location
+                  </Button>
+                  {form.watch('latitude') && form.watch('longitude') && (
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {form.watch('latitude')?.toFixed(4)}, {form.watch('longitude')?.toFixed(4)}
+                    </span>
+                  )}
+                </div>
+                <FormMessage>{form.formState.errors.latitude?.message}</FormMessage>
+              </FormItem>
+
+
               <FormField
                 control={form.control}
                 name="attachments"
