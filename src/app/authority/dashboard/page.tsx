@@ -98,6 +98,7 @@ export default function AuthorityDashboardPage() {
                 <SelectItem value="In Progress">In Progress</SelectItem>
                 <SelectItem value="Resolved">Resolved</SelectItem>
                 <SelectItem value="Denied">Denied</SelectItem>
+                <SelectItem value="Denied by AI">Denied by AI</SelectItem>
               </SelectContent>
             </Select>
           </div>
