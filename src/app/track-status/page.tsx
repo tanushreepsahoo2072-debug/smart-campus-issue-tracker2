@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 import { fetchComplaintById, type ComplaintDetails } from './actions';
-import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine, Bot, Link2 } from 'lucide-react';
+import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine, Bot, Link2,AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -32,6 +32,7 @@ const statusIcons: { [key: string]: React.ReactNode } = {
   "In Progress": <Wrench className="h-4 w-4" />,
   Resolved: <CheckCircle className="h-4 w-4 text-green-500" />,
   Denied: <XCircle className="h-4 w-4 text-destructive" />,
+  "Denied by AI": <AlertTriangle className="h-4 w-4 text-yellow-500" />,
   Pending: <LoaderCircle className="h-4 w-4 animate-spin" />,
 };
 
@@ -42,10 +43,12 @@ const priorityColorClass: { [key: string]: string } = {
   Low: "bg-green-500 border-green-500 text-white",
   "Not-Assigned": "bg-gray-400 border-gray-400 text-black",
 };
-
 function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
-  const isDenied = complaint.currentStatus === 'Denied';
-  const showAiComment = isDenied && complaint.AI_COMMENT && !complaint.updatedAt;
+  const isDeniedai = complaint.currentStatus === 'Denied by AI';
+  const isAiProcessed = complaint.AI === 1;
+  const isHumanProcessed = complaint.AI === 2;
+
+  const showAiComment = isDeniedai && complaint.AI_COMMENT && !complaint.updatedAt;
 
   return (
     <Card className="flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
@@ -57,6 +60,24 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
             fill
             className="object-cover"
           />
+          {isAiProcessed &&(
+          <Badge
+            className={cn(
+              "absolute top-2 left-2 z-10 bg-red-500 border-red-500 text-white",
+            )}
+          >
+            AI Checked
+          </Badge>
+          )}
+          {isHumanProcessed &&(
+            <Badge
+              className={cn(
+                "absolute top-2 right-2 z-10 bg-green-500 border-green-500 text-white",
+              )}
+            >
+              Human Checked
+            </Badge>
+          )}
         </div>
       )}
       <CardHeader>
@@ -91,31 +112,36 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
             {statusIcons[complaint.currentStatus]}
             <span className="ml-2 font-medium">{complaint.currentStatus}</span>
         </div>
-
-        {showAiComment && (
-            <>
-              <Separator />
-               <div>
-                  <p className="text-sm font-medium text-muted-foreground">AI Analysis</p>
-                  <p className="mt-1 whitespace-pre-wrap rounded-md border bg-muted/50 p-2">
-                    {complaint.AI_COMMENT}
-                  </p>
-                </div>
-            </>
-        )}
-
-        {complaint.admin_comments && (
+        {isAiProcessed && complaint.AI_COMMENT && (
           <>
             <Separator />
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Admin Feedback</p>
-              <p className="mt-1 whitespace-pre-wrap rounded-md border bg-muted/50 p-2">
-                {complaint.admin_comments}
+              <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Bot className="h-4 w-4" />
+                AI Analysis
+            </p>
+            <p className="mt-1 whitespace-pre-wrap rounded-md border bg-muted/50 p-2">
+              {complaint.AI_COMMENT}
+            </p>
+          </div>
+        </>
+      )}
+      {isHumanProcessed && complaint.admin_comments && (
+        <>
+          <Separator />
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">
+              Admin Feedback
+            </p>
+            <p className="mt-1 whitespace-pre-wrap rounded-md border bg-muted/50 p-2">
+              {complaint.admin_comments}
+            </p>
+            {complaint.updatedAt && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {complaint.updatedAt}
               </p>
-              {complaint.updatedAt && (
-                <p className="mt-2 text-xs text-muted-foreground">{complaint.updatedAt}</p>
-              )}
-            </div>
+            )}
+          </div>
           </>
         )}
       </CardContent>

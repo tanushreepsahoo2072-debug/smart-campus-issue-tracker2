@@ -8,11 +8,11 @@ export type Complaint = {
   email: string;
   imageUrls: string[];
   category: 'Maintenance' | 'Safety' | 'IT Support' | 'Landscaping' | 'Facilities' | 'Other' | 'Electrical' | 'Plumbing' | '';
-  currentStatus: 'Open' | 'In Progress' | 'Resolved' | 'Denied' | 'Pending';
+  currentStatus: 'Open' | 'In Progress' | 'Resolved' | 'Denied'| 'Denied by AI' | 'Pending';
   assignedTo: string;
   frequency: number;
   createdAt: string; // ISO string
-  updatedAt: string | null; // ISO string
+  updatedAt: string | null |undefined ; // ISO string
   admin_comments: string;
   is_spam: boolean;
   AI: number; // 0: pending, 1: complete, -1: error
