@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
-import { doc, onSnapshot, updateDoc, serverTimestamp, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import type { Issue } from '@/types/issue';
+import type { Issue } from '@/types/complaint';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -125,6 +125,7 @@ function SimilarIssues({ issueId }: { issueId: string }) {
 export default function IssuePage({ params }: IssuePageProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [issue, setIssue] = useState<Issue | null>(null);
 
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,6 +153,7 @@ export default function IssuePage({ params }: IssuePageProps) {
           ...data,
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : '',
           updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
+        } as Issue;
         } as Issue;
         setIssue(formattedIssue);
         // Initialize state for editable fields
@@ -211,6 +213,11 @@ export default function IssuePage({ params }: IssuePageProps) {
   if (!issue) {
     return notFound();
   }
+  
+  const location: google.maps.LatLngLiteral = {
+    lat: issue.latitude,
+    lng: issue.longitude,
+  };
 
   if (issue.AI === 0) {
     return (
@@ -285,15 +292,6 @@ export default function IssuePage({ params }: IssuePageProps) {
                             )}
                         </div>
                     )}
-
-                    <Separator className="my-6" />
-
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
-                        <div className="h-64 w-full rounded-lg overflow-hidden border">
-                           <IssueMap location={{ lat: issue.latitude, lng: issue.longitude }} />
-                        </div>
-                    </div>
 
                 </CardContent>
                  <CardFooter className="bg-muted/50 p-4">
@@ -393,6 +391,13 @@ export default function IssuePage({ params }: IssuePageProps) {
                         {isUpdating && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdating ? 'Updating...' : 'Save Changes'}
                     </Button>
+                    <Separator className="my-6" />
+                    <div>
+                        <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
+                        <div className="h-64 w-full rounded-lg overflow-hidden border">
+                           <IssueMap issue={issue} location={location} />
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -400,5 +405,3 @@ export default function IssuePage({ params }: IssuePageProps) {
     </div>
   );
 }
-
-    
