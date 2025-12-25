@@ -1,79 +1,66 @@
+
 "use client";
 
-import { useMemo } from "react";
-import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
-import { AlertTriangle, MapPin } from "lucide-react";
-
-import type { Issue } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import type { Complaint } from "@/types/complaint";
+import { formatDistanceToNow } from 'date-fns';
+import { FilePenLine, Wrench, CheckCircle, XCircle } from "lucide-react";
+import { IssueMap } from "@/components/issue-map";
 
-interface IssueMapProps {
-  issue: Issue;
+const statusIcons: { [key: string]: React.ReactNode } = {
+  'Open': <FilePenLine className="h-4 w-4" />,
+  'In Progress': <Wrench className="h-4 w-4" />,
+  'Resolved': <CheckCircle className="h-4 w-4 text-green-500" />,
+  'Denied': <XCircle className="h-4 w-4 text-destructive" />,
+};
+
+const priorityColorClass: { [key: string]: string } = {
+  'Critical': 'bg-red-600 border-red-600 text-white',
+  'High': 'bg-orange-500 border-orange-500 text-white',
+  'Medium': 'bg-yellow-500 border-yellow-500 text-black',
+  'Low': 'bg-green-500 border-green-500 text-white',
+  'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
+};
+
+interface IssueCardProps {
+  complaint: Complaint;
 }
 
-export function IssueMap({ issue }: IssueMapProps) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-  });
+function IssueCard({ complaint }: IssueCardProps) {
+  const priorityText = complaint.ai_priority || 'Not-Assigned';
+  const locationParts = complaint.location.split(',').map(part => parseFloat(part.trim()));
+  const location = locationParts.length === 2 ? { lat: locationParts[0], lng: locationParts[1] } : null;
 
-  const center = useMemo(
-    () => ({
-      lat: issue.location.lat,
-      lng: issue.location.lng,
-    }),
-    [issue.location.lat, issue.location.lng]
-  );
-
-  /* ------------------------------ Error State ------------------------------ */
-  if (loadError) {
-    return (
-      <Card className="h-full border-destructive/50 bg-destructive/10">
-        <CardContent className="flex flex-col items-center justify-center gap-2 p-6 text-center">
-          <AlertTriangle className="h-8 w-8 text-destructive" />
-          <p className="text-sm font-semibold text-destructive">
-            Map failed to load
-          </p>
-          <p className="text-xs text-destructive/80">
-            Please check Google Maps API key and billing settings.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  /* ----------------------------- Loading State ----------------------------- */
-  if (!isLoaded) {
-    return <Skeleton className="h-full w-full rounded-lg" />;
-  }
-
-  /* ----------------------------- Map Loaded ----------------------------- */
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <MapPin className="h-5 w-5" />
-          Issue Location
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <div className="h-64 w-full overflow-hidden rounded-lg border">
-          <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "100%" }}
-            center={center}
-            zoom={16}
-            options={{
-              streetViewControl: false,
-              mapTypeControl: false,
-              fullscreenControl: false,
-            }}
-          >
-            <MarkerF position={center} title={issue.title} />
-          </GoogleMap>
+    <Card className="flex h-full transform-gpu flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl">
+      <CardHeader className="flex-row items-start justify-between gap-4">
+        <div className="flex-1">
+          <CardTitle className="mb-2 text-lg font-bold leading-tight">{complaint.title}</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            {complaint.createdAt ? formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true }) : ''}
+          </p>
         </div>
+        <Badge className={`whitespace-nowrap font-bold ${priorityColorClass[priorityText]}`}>
+          {priorityText}
+        </Badge>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="relative h-40 w-full overflow-hidden rounded-lg border">
+          <IssueMap location={location} />
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-muted-foreground">Status</span>
+          <div className="flex items-center gap-2 font-semibold">
+             {statusIcons[complaint.currentStatus]} {complaint.currentStatus}
+          </div>
+        </div>
+        <p className="line-clamp-2 text-sm text-muted-foreground">{complaint.description}</p>
       </CardContent>
     </Card>
   );
 }
+
+export default IssueCard;
