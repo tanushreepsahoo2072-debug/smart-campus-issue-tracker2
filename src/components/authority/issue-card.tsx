@@ -30,8 +30,15 @@ interface IssueCardProps {
 
 function IssueCard({ complaint }: IssueCardProps) {
   const priorityText = complaint.ai_priority || 'Not-Assigned';
-  const locationParts = complaint.location.split(',').map(part => parseFloat(part.trim()));
-  const location = locationParts.length === 2 ? { lat: locationParts[0], lng: locationParts[1] } : null;
+  const latitude = Number(complaint.latitude);
+  const longitude = Number(complaint.longitude);
+
+const locationParts = [latitude, longitude];
+
+  const location: google.maps.LatLngLiteral = {
+    lat: complaint.latitude,
+    lng: complaint.longitude,
+  };
 
   return (
     <Card className="flex h-full transform-gpu flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl">
@@ -48,7 +55,7 @@ function IssueCard({ complaint }: IssueCardProps) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="relative h-40 w-full overflow-hidden rounded-lg border">
-          <IssueMap location={location} />
+          <IssueMap issue={complaint} location={location} />
         </div>
         <Separator />
         <div className="flex items-center justify-between text-sm">
