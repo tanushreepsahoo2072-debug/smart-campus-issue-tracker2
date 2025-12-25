@@ -7,13 +7,14 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Copy } from 'lucide-react';import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 import { fetchComplaintById, type ComplaintDetails } from './actions';
@@ -47,9 +48,18 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
   const isDeniedai = complaint.currentStatus === 'Denied by AI';
   const isAiProcessed = complaint.AI === 1;
   const isHumanProcessed = complaint.AI === 2;
+  const { toast } = useToast();
 
   const showAiComment = isDeniedai && complaint.AI_COMMENT && !complaint.updatedAt;
-
+  const handleCopyToClipboard = () => {
+    if (complaint.merged_into) {
+      navigator.clipboard.writeText(complaint.merged_into);
+      toast({
+        title: 'Copied to Clipboard!',
+        description: 'The complaint ID has been copied.',
+      });
+    }
+  };
   return (
     <Card className="flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
       {complaint.imageUrls.length > 0 && (
@@ -97,15 +107,31 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
         </p>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
-        {complaint.is_spam && complaint.merged_into && (
-            <Alert variant="default" className="bg-blue-50 border-blue-200">
-                <Link2 className="h-4 w-4 text-blue-600" />
-                <AlertTitle className="text-blue-800">This is a Duplicate Issue</AlertTitle>
-                <AlertDescription className="text-blue-700">
-                    This issue has been merged with ticket #{complaint.merged_into.substring(0,6)}... We are tracking its progress there. Any updates will be reflected here.
-                </AlertDescription>
-            </Alert>
-        )}
+      {complaint.is_spam && complaint.merged_into && (
+        <Alert variant="default" className="bg-blue-50 border-blue-200">
+          <Link2 className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">This is a Duplicate Issue</AlertTitle>
+          <AlertDescription className="text-blue-700">
+            <p>
+              This issue has been merged with ticket <strong>#{complaint.merged_into}</strong>. 
+              We are tracking its progress there. Any updates will be reflected here.
+            </p>
+      
+            {/* The "Action" Equivalent */}
+            <div className="mt-3 flex justify-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCopyToClipboard}
+                className="border-blue-300 text-blue-700 hover:bg-blue-100 hover:text-blue-800"
+              >
+                <Copy className="mr-2 h-3 w-3" />
+                Copy ID
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
         <p className="text-muted-foreground">{complaint.description}</p>
         
         <div className="flex items-center text-sm">

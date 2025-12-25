@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
+//import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
 import { AlertTriangle, MapPin } from "lucide-react";
 
 import type { Issue } from "@/lib/types";
