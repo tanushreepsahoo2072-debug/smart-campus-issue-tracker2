@@ -1,7 +1,7 @@
 import type { Timestamp } from 'firebase/firestore';
 
 export type IssueCategory = 'Maintenance' | 'Safety' | 'IT Support' | 'Landscaping' | 'Facilities' | 'Other' | 'Electrical' | 'Plumbing';
-export type IssueStatus = 'Open' | 'In Progress' | 'Resolved' | 'Denied';
+export type IssueStatus = 'Open' | 'In Progress' | 'Resolved' | 'Denied' | 'Denied by AI';
 export type AIPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 
 export interface AIAnalysis {
@@ -19,18 +19,14 @@ export interface Issue extends AIAnalysisPlus {
   title: string;
   description: string;
   category: IssueCategory;
-  location: {
-    lat: number;
-    lng: number;
-    name: string;
-  };
+  longitude:number ;
+  latitude: number;
   imageUrl?: string;
-  reportedBy: string;
   assignedTo?: string;
   timestamp: Timestamp | string; // Can be a server timestamp on write, string on read
   createdAt: Timestamp | string; 
   updatedAt?: Timestamp | string; 
-  status: IssueStatus;
+  currentStatus: IssueStatus;
   frequency: number;
   predicted_resolution_time?: string; 
   admin_comments?: string;

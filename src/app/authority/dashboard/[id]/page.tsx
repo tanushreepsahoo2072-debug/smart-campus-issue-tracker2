@@ -9,7 +9,6 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +16,9 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import IssueMap from '@/components/authority/issue-map';
-
 import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { IssueMap } from "@/components/issue-map";
 
 interface IssuePageProps {
   params: {
@@ -42,6 +40,22 @@ const priorityColorClass: { [key: string]: string } = {
   'Low': 'bg-green-500 border-green-500 text-white',
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
+
+interface IssueCardProps {
+  complaint: Complaint;
+}
+
+function IssueCard({ complaint }: IssueCardProps) {
+  const priorityText = complaint.ai_priority || 'Not-Assigned';
+  const latitude = Number(complaint.latitude);
+  const longitude = Number(complaint.longitude);
+
+const locationParts = [latitude, longitude];
+
+const location: google.maps.LatLngLiteral = {
+  lat: complaint.latitude,
+  lng: complaint.longitude,
+};}
 
 export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
   const params = use(paramsPromise);
@@ -114,7 +128,7 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
     return notFound();
   }
 
-  if (issue.AI !== 1) {
+  if (issue.AI == 0) {
     return (
         <div className="container mx-auto flex h-[calc(100vh-10rem)] max-w-5xl items-center justify-center p-4 md:p-8">
             <Alert>
@@ -239,6 +253,10 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                         {isUpdating && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdating ? 'Updating...' : 'Save Changes'}
                     </Button>
+                    <Separator />
+                    <div className="flex items-center text-muted-foreground">
+                      <IssueMap issue={complaint} location={location} />
+                    </div>
                 </CardContent>
             </Card>
         </div>
