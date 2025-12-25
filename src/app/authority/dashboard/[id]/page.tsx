@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import type { Issue } from '@/types/issue';
+import type { Issue } from '@/types/complaint';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
