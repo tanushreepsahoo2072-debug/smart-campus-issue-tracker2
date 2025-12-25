@@ -1,73 +1,80 @@
+'use client';
 
-"use client";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import type { Complaint } from "@/types/complaint";
+import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
-import { FilePenLine, Wrench, CheckCircle, XCircle } from "lucide-react";
-import { IssueMap } from "@/components/issue-map";
+import { Complaint } from '@/types/complaint';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { FilePenLine, Wrench, CheckCircle, XCircle, Bot, ArrowRight } from 'lucide-react';
 
 const statusIcons: { [key: string]: React.ReactNode } = {
-  'Open': <FilePenLine className="h-4 w-4" />,
+  Open: <FilePenLine className="h-4 w-4" />,
   'In Progress': <Wrench className="h-4 w-4" />,
-  'Resolved': <CheckCircle className="h-4 w-4 text-green-500" />,
-  'Denied': <XCircle className="h-4 w-4 text-destructive" />,
+  Resolved: <CheckCircle className="h-4 w-4 text-green-500" />,
+  Denied: <XCircle className="h-4 w-4 text-destructive" />,
 };
 
 const priorityColorClass: { [key: string]: string } = {
-  'Critical': 'bg-red-600 border-red-600 text-white',
-  'High': 'bg-orange-500 border-orange-500 text-white',
-  'Medium': 'bg-yellow-500 border-yellow-500 text-black',
-  'Low': 'bg-green-500 border-green-500 text-white',
+  Critical: 'bg-red-600 border-red-600 text-white',
+  High: 'bg-orange-500 border-orange-500 text-white',
+  Medium: 'bg-yellow-500 border-yellow-500 text-black',
+  Low: 'bg-green-500 border-green-500 text-white',
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
 
-interface IssueCardProps {
+type IssueCardProps = {
   complaint: Complaint;
-}
+};
 
-function IssueCard({ complaint }: IssueCardProps) {
+export default function IssueCard({ complaint }: IssueCardProps) {
+
+  const statusText = complaint.currentStatus || 'Open';
   const priorityText = complaint.ai_priority || 'Not-Assigned';
-  const latitude = Number(complaint.latitude);
-  const longitude = Number(complaint.longitude);
-
-const locationParts = [latitude, longitude];
-
-  const location: google.maps.LatLngLiteral = {
-    lat: complaint.latitude,
-    lng: complaint.longitude,
-  };
-
+  
   return (
-    <Card className="flex h-full transform-gpu flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl">
-      <CardHeader className="flex-row items-start justify-between gap-4">
-        <div className="flex-1">
-          <CardTitle className="mb-2 text-lg font-bold leading-tight">{complaint.title}</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            {complaint.createdAt ? formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true }) : ''}
-          </p>
+    <Card className="flex h-full w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl hover:-translate-y-1">
+      <CardHeader className="relative p-0">
+        <div className="aspect-video w-full bg-muted">
+          {complaint.imageUrls && complaint.imageUrls.length > 0 && (
+            <Image
+              src={complaint.imageUrls[0]}
+              alt={complaint.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          )}
         </div>
-        <Badge className={`whitespace-nowrap font-bold ${priorityColorClass[priorityText]}`}>
-          {priorityText}
+        <Badge
+          className={`absolute left-4 top-4 font-bold ${priorityColorClass[priorityText]}`}
+        >
+          {priorityText} Priority
         </Badge>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="relative h-40 w-full overflow-hidden rounded-lg border">
-          <IssueMap issue={complaint} location={location} />
+      
+      <CardContent className="flex flex-grow flex-col p-6">
+        <CardTitle className="text-lg font-bold leading-tight line-clamp-2">{complaint.title}</CardTitle>
+        <p className="my-4 text-sm text-muted-foreground line-clamp-3">{complaint.description}</p>
+        
+        <div className="mt-auto flex items-center justify-between text-sm font-medium">
+            <div className="flex items-center gap-2">
+              {statusIcons[statusText]}
+              <span>{statusText}</span>
+            </div>
+             <p className="text-xs text-muted-foreground">
+                {complaint.createdAt ? formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true }) : 'just now'}
+            </p>
         </div>
-        <Separator />
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium text-muted-foreground">Status</span>
-          <div className="flex items-center gap-2 font-semibold">
-             {statusIcons[complaint.currentStatus]} {complaint.currentStatus}
-          </div>
-        </div>
-        <p className="line-clamp-2 text-sm text-muted-foreground">{complaint.description}</p>
       </CardContent>
+
+      <CardFooter className="mt-auto bg-muted/50 p-3">
+        <Button variant="ghost" className="w-full justify-center text-sm font-semibold">
+          View Details <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
-
-export default IssueCard;
