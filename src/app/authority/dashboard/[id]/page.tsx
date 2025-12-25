@@ -199,15 +199,6 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                         </div>
                     )}
 
-                    <Separator className="my-6" />
-
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
-                        <div className="h-64 w-full rounded-lg overflow-hidden border">
-                           <IssueMap latitude={issue.latitude} longitude={issue.longitude} />
-                        </div>
-                    </div>
-
                 </CardContent>
                  <CardFooter className="bg-muted/50 p-4">
                     <div className="flex w-full items-center justify-end text-xs text-muted-foreground">
@@ -253,9 +244,12 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                         {isUpdating && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdating ? 'Updating...' : 'Save Changes'}
                     </Button>
-                    <Separator />
-                    <div className="flex items-center text-muted-foreground">
-                      <IssueMap issue={complaint} location={location} />
+                    <Separator className="my-6" />
+                    <div>
+                        <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
+                        <div className="h-64 w-full rounded-lg overflow-hidden border">
+                           <IssueMap issue={issue} location={location} />
+                        </div>
                     </div>
                 </CardContent>
             </Card>

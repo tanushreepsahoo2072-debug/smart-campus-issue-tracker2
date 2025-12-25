@@ -1,6 +1,7 @@
 import type { Timestamp } from 'firebase/firestore';
 export type IssueCategory = 'Maintenance' | 'Safety' | 'IT Support' | 'Landscaping' | 'Facilities' | 'Other' | 'Electrical' | 'Plumbing';
 export type IssueStatus = 'Open' | 'In Progress' | 'Resolved' | 'Denied' | 'Denied by AI';
+export type AIPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 export type Complaint = {
   id: string;
   title: string;
@@ -11,7 +12,6 @@ export type Complaint = {
   imageUrls: string[];
   admin_comments: string;
   category: IssueCategory;
-  priority: 'Not-Assigned' | 'Low' | 'Medium' | 'High' | 'Critical';
   currentStatus: IssueStatus;
   assignedTo: string;
   timestamp: Timestamp | string; // Can be a server timestamp on write, string on read
@@ -24,5 +24,5 @@ export type Complaint = {
   AI: number; // 0: pending, 1: complete, -1: error
   AI_COMMENT: string;
   merged_into: string | null;
-  ai_priority?: 'Not-Assigned' | 'Low' | 'Medium' | 'High' | 'Critical';
+  ai_priority?: AIPriority;
 };
