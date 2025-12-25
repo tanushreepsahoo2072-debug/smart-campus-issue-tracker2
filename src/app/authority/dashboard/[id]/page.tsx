@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Issue } from '@/types/issue';
@@ -41,8 +41,7 @@ const priorityColorClass: { [key: string]: string } = {
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
 
-export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
-  const params = use(paramsPromise);
+export default function IssuePage({ params }: IssuePageProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [issue, setIssue] = useState<Issue | null>(null);
@@ -246,5 +245,4 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
       </div>
     </div>
   );
-
-    
+}
