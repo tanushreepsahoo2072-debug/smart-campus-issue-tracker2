@@ -17,7 +17,7 @@ export type Complaint = {
   timestamp: Timestamp | string; // Can be a server timestamp on write, string on read
   frequency: number;
   createdAt: string // ISO string
-  updatedAt: Timestamp | string; // ISO string
+  updatedAt:  string; // ISO string
   predicted_resolution_time: string;
   ai_spam_score: number;
   is_spam: boolean;

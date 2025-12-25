@@ -2,9 +2,9 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { doc, onSnapshot, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase';
-import type { Complaint } from '@/types/complaint';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import type { Issue } from '@/types/issue';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -41,30 +41,14 @@ const priorityColorClass: { [key: string]: string } = {
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
 
-interface IssueCardProps {
-  complaint: Complaint;
-}
-
-function IssueCard({ complaint }: IssueCardProps) {
-  const priorityText = complaint.ai_priority || 'Not-Assigned';
-  const latitude = Number(complaint.latitude);
-  const longitude = Number(complaint.longitude);
-
-const locationParts = [latitude, longitude];
-
-const location: google.maps.LatLngLiteral = {
-  lat: complaint.latitude,
-  lng: complaint.longitude,
-};}
-
 export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
   const params = use(paramsPromise);
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [issue, setIssue] = useState<Complaint | null>(null);
+  const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [newStatus, setNewStatus] = useState<Complaint['currentStatus'] | ''>('');
+  const [newStatus, setNewStatus] = useState<Issue['currentStatus'] | ''>('');
   const [adminComments, setAdminComments] = useState('');
 
   useEffect(() => {
@@ -80,7 +64,7 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
           ...data,
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : '',
           updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
-        } as Complaint;
+        } as Issue;
         setIssue(formattedIssue);
         setNewStatus(formattedIssue.currentStatus);
         setAdminComments(formattedIssue.admin_comments || '');
@@ -127,8 +111,13 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
   if (!issue) {
     return notFound();
   }
+  
+  const location: google.maps.LatLngLiteral = {
+    lat: issue.latitude,
+    lng: issue.longitude,
+  };
 
-  if (issue.AI == 0) {
+  if (issue.AI === 0) {
     return (
         <div className="container mx-auto flex h-[calc(100vh-10rem)] max-w-5xl items-center justify-center p-4 md:p-8">
             <Alert>
@@ -219,7 +208,7 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium">New Status</label>
-                        <Select value={newStatus || ''} onValueChange={(value) => setNewStatus(value as Complaint['currentStatus'])}>
+                        <Select value={newStatus || ''} onValueChange={(value) => setNewStatus(value as Issue['currentStatus'])}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a new status" />
                             </SelectTrigger>
@@ -257,4 +246,5 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
       </div>
     </div>
   );
-}
+
+    
