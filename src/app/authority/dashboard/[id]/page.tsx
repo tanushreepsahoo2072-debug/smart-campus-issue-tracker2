@@ -186,6 +186,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
   const openStreetMapUrl = issue ? `https://www.openstreetmap.org/export/embed.html?bbox=${issue.longitude-0.004},${issue.latitude-0.002},${issue.longitude+0.004},${issue.latitude+0.002}&layer=mapnik&marker=${issue.latitude},${issue.longitude}` : '';
+  const googleMapsUrl = issue ? `https://www.google.com/maps?q=${issue.latitude},${issue.longitude}` : '';
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -386,29 +387,32 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
             </Card>
             
             <Card className="rounded-2xl shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div className="space-y-1">
-                        <CardTitle>Location</CardTitle>
-                        <CardDescription>
-                            {issue.latitude.toFixed(5)}, {issue.longitude.toFixed(5)}
-                        </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle>Location</CardTitle>
+                  <CardDescription>
+                    {issue.latitude.toFixed(5)}, {issue.longitude.toFixed(5)}
+                  </CardDescription>
+                </div>
+                <MapPin className="h-6 w-6 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <Link href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block aspect-video w-full overflow-hidden rounded-lg border relative group">
+                  {openStreetMapUrl && (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0, pointerEvents: 'none' }}
+                      loading="lazy"
+                      src={openStreetMapUrl}
+                      title={`Map location for ${issue.title}`}
+                    ></iframe>
+                  )}
+                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-white font-bold bg-black/50 px-4 py-2 rounded-lg">View on Google Maps</p>
                     </div>
-                    <MapPin className="h-6 w-6 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="aspect-video w-full overflow-hidden rounded-lg border">
-                        {openStreetMapUrl && (
-                            <iframe
-                                width="100%"
-                                height="100%"
-                                style={{ border: 0 }}
-                                loading="lazy"
-                                allowFullScreen
-                                src={openStreetMapUrl}
-                            ></iframe>
-                        )}
-                    </div>
-                </CardContent>
+                </Link>
+              </CardContent>
             </Card>
             
             <SimilarComplaints issueId={issueId} />
