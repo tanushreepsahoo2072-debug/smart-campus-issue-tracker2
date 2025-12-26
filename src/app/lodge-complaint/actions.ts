@@ -2,21 +2,16 @@
 'use server';
 
 import { z } from 'zod';
-//import { initializeApp as initializeFirebaseAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
-//import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { initializeFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc, runTransaction  } from 'firebase/firestore';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 
-//const firestoreAdmin = getFirestore();
 const { firestore } = initializeFirebase();
 
 
-// Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
-// Validation schema for incoming data from the client
 const complaintSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().min(1, 'Description is required.'),
@@ -47,14 +42,8 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
 
       console.log(`[AI_DEBUG] Bounding Box: lat(${latMin}-${latMax}), lon(${lonMin}-${lonMax})`);
 
-      //const issuesRef = firestoreAdmin.collection('issues');
       const issuesRef = collection(firestore, 'issues');
-      //const querySnapshot = await issuesRef
-      //  .where('currentStatus', 'in', ['Open', 'In Progress'])
-      //  .where('latitude', '>=', latMin)
-      //  .where('latitude', '<=', latMax)
-      //  .get();
-        
+       
 
       const q = query(
         issuesRef,
@@ -82,7 +71,7 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
 
     // 2. Prepare for Gemini API call
     console.log('[AI_STEP] 2. Preparing prompt for Gemini API call...');
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
     const nearbyIssuesText = candidates.length
       ? candidates.map(c => `- ID: ${c.id}, Title: "${c.title}", Category: ${c.category}`).join('\n')
@@ -100,7 +89,7 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
 
       Perform the following tasks and return your decision ONLY in the specified JSON format.
 
-      Task 1: Safety & Authenticity. Check the image. If it is offensive, a meme, a stock photo, clearly AI-generated, or completely unrelated to a plausible campus maintenance issue, set "is_spam" to true and "status_update" to "Denied". Provide a reason in "AI_COMMENT".
+      Task 1: Safety & Authenticity. Check the image. If it is offensive, a meme, a stock photo, clearly AI-generated, or completely unrelated to a plausible campus maintenance issue, set "is_spam" to true and "status_update" to "Denied by AI". Provide a reason in "AI_COMMENT".
 
       Task 2: Deduplication. Compare the new complaint's image and description to the 'Nearby Issues' list. If it reports the exact same physical item (e.g., the same broken window, not just another broken window), set "is_duplicate" to true and "duplicate_id" to the ID of the original issue.
 
@@ -108,7 +97,7 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
 
       Task 4: Severity. If valid and unique, assign a "priority" from this list: [Critical, High, Medium, Low]. Use 'Critical' only for immediate life-safety risks (e.g., sparking wires, major flooding visible in the image). Base your decision on the visual evidence.
       
-      Return ONLY a JSON object in this format: { "is_spam": boolean, "is_duplicate": boolean, "duplicate_id": string | null, "category": "string", "priority": "string", "AI_COMMENT": "1-sentence summary of findings", "status_update": "Open" | "Denied" }
+      Return ONLY a JSON object in this format: { "is_spam": boolean, "is_duplicate": boolean, "duplicate_id": string | null, "category": "string", "priority": "string", "AI_COMMENT": "1-sentence summary of findings", "status_update": "Open" | "Denied by AI" }
     `;
     console.log('[AI_DEBUG] Constructed Prompt:', prompt);
 
@@ -136,10 +125,10 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
     console.log('[AI_STEP] 4. Processing AI result and updating Firestore...');
     const issueRef = doc(firestore, 'issues', issueId);
 
-    if (aiResult.is_spam || aiResult.status_update === 'Denied') {
-      console.log('[AI_DECISION] Complaint flagged as SPAM or DENIED.');
+    if (aiResult.is_spam || aiResult.status_update === 'Denied by AI') {
+      console.log('[AI_DECISION] Complaint flagged as SPAM or Denied by AI.');
       await updateDoc(issueRef, {  
-        currentStatus: 'Denied',
+        currentStatus: 'Denied by AI',
         is_spam: true,
         AI_COMMENT: aiResult.AI_COMMENT,
         AI: 1,
@@ -202,15 +191,17 @@ async function analyzeComplaintWithAI(issueId: string, data: ComplaintData) {
       });
     }
     console.log(`[AI_STEP] Successfully processed and updated issue: ${issueId}`);
-  } catch (error) {
+  }catch (error: unknown) {
     console.error('Error in AI analysis background task:', error);
     const issueRef = doc(firestore, 'issues', issueId);
+    const err = error instanceof Error ? error : { message: 'Unknown error', stack: null, name: null };
+  
     await updateDoc(issueRef, {
-      AI: -1, // Signify an AI processing error
+      AI: -1,
       AI_COMMENT: {
-        message: error?.message || 'Unknown error',
-        stack: error?.stack || null,
-        name: error?.name || null,
+        message: err.message,
+        stack: err.stack,
+        name: err.name,
       },
     });
   }
@@ -272,5 +263,3 @@ export async function handleComplaintSubmission(
     return { success: false, error: errorMessage };
   }
 }
-
-    

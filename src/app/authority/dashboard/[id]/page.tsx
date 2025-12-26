@@ -1,15 +1,13 @@
-
 'use client';
 
-import { useEffect, useState, use } from 'react';
-import { doc, onSnapshot, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase';
-import type { Complaint } from '@/types/complaint';
+import { useEffect, useState } from 'react';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import type { Issue } from '@/types/complaint';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +15,9 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import IssueMap from '@/components/authority/issue-map';
-
 import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { IssueMap } from "@/components/issue-map";
 
 interface IssuePageProps {
   params: {
@@ -43,14 +40,13 @@ const priorityColorClass: { [key: string]: string } = {
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
 
-export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
-  const params = use(paramsPromise);
+export default function IssuePage({ params }: IssuePageProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [issue, setIssue] = useState<Complaint | null>(null);
+  const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [newStatus, setNewStatus] = useState<Complaint['currentStatus'] | ''>('');
+  const [newStatus, setNewStatus] = useState<Issue['currentStatus'] | ''>('');
   const [adminComments, setAdminComments] = useState('');
 
   useEffect(() => {
@@ -66,7 +62,7 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
           ...data,
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : '',
           updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
-        } as Complaint;
+        } as Issue;
         setIssue(formattedIssue);
         setNewStatus(formattedIssue.currentStatus);
         setAdminComments(formattedIssue.admin_comments || '');
@@ -113,8 +109,13 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
   if (!issue) {
     return notFound();
   }
+  
+  const location: google.maps.LatLngLiteral = {
+    lat: issue.latitude,
+    lng: issue.longitude,
+  };
 
-  if (issue.AI !== 1) {
+  if (issue.AI === 0) {
     return (
         <div className="container mx-auto flex h-[calc(100vh-10rem)] max-w-5xl items-center justify-center p-4 md:p-8">
             <Alert>
@@ -185,15 +186,6 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                         </div>
                     )}
 
-                    <Separator className="my-6" />
-
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
-                        <div className="h-64 w-full rounded-lg overflow-hidden border">
-                           <IssueMap latitude={issue.latitude} longitude={issue.longitude} />
-                        </div>
-                    </div>
-
                 </CardContent>
                  <CardFooter className="bg-muted/50 p-4">
                     <div className="flex w-full items-center justify-end text-xs text-muted-foreground">
@@ -214,7 +206,7 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium">New Status</label>
-                        <Select value={newStatus || ''} onValueChange={(value) => setNewStatus(value as Complaint['currentStatus'])}>
+                        <Select value={newStatus || ''} onValueChange={(value) => setNewStatus(value as Issue['currentStatus'])}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a new status" />
                             </SelectTrigger>
@@ -239,6 +231,13 @@ export default function IssuePage({ params: paramsPromise }: IssuePageProps) {
                         {isUpdating && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdating ? 'Updating...' : 'Save Changes'}
                     </Button>
+                    <Separator className="my-6" />
+                    <div>
+                        <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
+                        <div className="h-64 w-full rounded-lg overflow-hidden border">
+                           <IssueMap issue={issue} location={location} />
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
