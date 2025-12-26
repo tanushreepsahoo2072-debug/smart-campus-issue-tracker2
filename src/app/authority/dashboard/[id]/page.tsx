@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
+import * as React from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Issue } from '@/types/issue';
@@ -15,15 +16,13 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ArrowLeft, LoaderCircle, FilePenLine, Wrench, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { IssueMap } from "@/components/issue-map";
 
 interface IssuePageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
+
 
 const statusIcons: { [key: string]: React.ReactNode } = {
   'Open': <FilePenLine className="h-4 w-4" />,
@@ -41,9 +40,10 @@ const priorityColorClass: { [key: string]: string } = {
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
 
-const priorities: Issue['ai_priority'][] = ['Low', 'Medium', 'High', 'Critical'];
+const priorities: (Issue['ai_priority'])[] = ['Low', 'Medium', 'High', 'Critical'];
 
-export default function IssuePage({ params: { id } }: IssuePageProps) {
+export default function IssuePage({ params }: IssuePageProps) {
+  const { id } = React.use(params);
   const firestore = useFirestore();
   const { toast } = useToast();
   
