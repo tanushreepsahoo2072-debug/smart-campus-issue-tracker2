@@ -261,19 +261,21 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                     <Separator className="my-6" />
 
                     <div className="space-y-2">
-                        <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
-                          <MapPin className="h-5 w-5 text-primary" />
-                          Location
-                        </h3>
-                        <div className="aspect-video w-full overflow-hidden rounded-lg border">
-                          <iframe
-                            width="100%"
-                            height="100%"
-                            src={bhuvanMapUrl}
-                            title="Issue Location on Bhuvan Map"
-                            loading="lazy"
-                          ></iframe>
-                        </div>
+                      <h3 className="flex items-center gap-2 mb-2 text-lg font-semibold">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        Location
+                      </h3>
+                      <div className="relative w-full overflow-hidden border rounded-lg aspect-video">
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          className="pointer-events-none" 
+                          src={bhuvanMapUrl}
+                          title="Issue Location on Bhuvan Map"
+                          loading="lazy"
+                        ></iframe>
+                        <Link href={bhuvanMapUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0" aria-label="View location on Bhuvan Maps"></Link>
+                      </div>
                     </div>
                     
                     <Separator className="my-6" />
