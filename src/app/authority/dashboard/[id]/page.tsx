@@ -20,6 +20,7 @@ import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import SimilarComplaints from '@/components/ui/similar-complaints';
 
 
 const statusIcons: { [key: string]: React.ReactNode } = {
@@ -310,7 +311,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                         <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
                         <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block relative aspect-video w-full rounded-lg overflow-hidden group">
                            <iframe
-                            className="absolute inset-0 w-full h-full border-0"
+                            className="absolute inset-0 w-full h-full border-0 pointer-events-none"
                             src={bhuvanUrl}
                             loading="lazy"
                             ></iframe>
@@ -324,6 +325,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                     </div>
                 </CardContent>
             </Card>
+            <SimilarComplaints issueId={issueId} />
         </div>
       </div>
     </div>
