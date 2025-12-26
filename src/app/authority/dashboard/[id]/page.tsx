@@ -16,8 +16,19 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown, MapPin } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown, MapPin, Undo2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SimilarComplaints from '@/components/ui/similar-complaints';
@@ -122,6 +133,33 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
     }
   };
 
+  const handleMarkAsNotSimilar = async () => {
+    if (!firestore || !issueId) return;
+    setIsUpdating(true);
+    try {
+        const docRef = doc(firestore, 'issues', issueId);
+        await updateDoc(docRef, {
+            is_spam: false,
+            merged_into: null, // Clear the link to the original issue
+            AI_COMMENT: `Manually marked as not a duplicate by authority. Original AI comment: ${issue?.AI_COMMENT || ''}`,
+            updatedAt: serverTimestamp(),
+        });
+        toast({
+            title: 'Issue Restored',
+            description: 'This issue is now being tracked as a unique complaint.',
+        });
+    } catch (error) {
+        console.error('Error marking as not similar:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: 'Could not update the issue. Please try again.',
+        });
+    } finally {
+        setIsUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto flex h-[calc(100vh-10rem)] max-w-5xl items-center justify-center p-4 md:p-8">
@@ -165,6 +203,41 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
             <Card className="overflow-hidden rounded-2xl shadow-lg">
+                {issue.is_spam && issue.merged_into && (
+                    <Alert variant="destructive" className="rounded-b-none border-b-0">
+                        <Bot className="h-4 w-4" />
+                        <AlertTitle>Marked as Duplicate by AI</AlertTitle>
+                        <AlertDescription>
+                            This issue was flagged as a duplicate of issue{' '}
+                            <Link href={`/authority/dashboard/${issue.merged_into}`} className="font-bold underline hover:text-destructive-foreground">
+                                #{issue.merged_into}
+                            </Link>
+                            . If this is incorrect, you can restore it.
+                        </AlertDescription>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="mt-4 bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90">
+                                    <Undo2 className="mr-2 h-4 w-4" />
+                                    Not Similar
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will mark the issue as unique and restore it to the main dashboard. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleMarkAsNotSimilar} disabled={isUpdating}>
+                                        {isUpdating ? <LoaderCircle className="animate-spin" /> : 'Yes, Restore Issue'}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </Alert>
+                )}
                 <CardHeader className="relative p-0">
                     <div className="aspect-video w-full bg-muted">
                     {issue.imageUrls && issue.imageUrls.length > 0 && (
@@ -331,3 +404,5 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
     </div>
   );
 }
+
+    
