@@ -185,6 +185,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
+  const openStreetMapUrl = issue ? `https://www.openstreetmap.org/export/embed.html?bbox=${issue.longitude-0.004},${issue.latitude-0.002},${issue.longitude+0.004},${issue.latitude+0.002}&layer=mapnik&marker=${issue.latitude},${issue.longitude}` : '';
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -383,6 +384,33 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                     </Button>
                 </CardContent>
             </Card>
+            
+            <Card className="rounded-2xl shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div className="space-y-1">
+                        <CardTitle>Location</CardTitle>
+                        <CardDescription>
+                            {issue.latitude.toFixed(5)}, {issue.longitude.toFixed(5)}
+                        </CardDescription>
+                    </div>
+                    <MapPin className="h-6 w-6 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="aspect-video w-full overflow-hidden rounded-lg border">
+                        {openStreetMapUrl && (
+                            <iframe
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                loading="lazy"
+                                allowFullScreen
+                                src={openStreetMapUrl}
+                            ></iframe>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+            
             <SimilarComplaints issueId={issueId} />
         </div>
       </div>
