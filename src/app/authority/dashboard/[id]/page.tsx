@@ -41,11 +41,10 @@ const priorityColorClass: { [key: string]: string } = {
 
 const categories: IssueCategory[] = ['Maintenance', 'Safety', 'IT Support', 'Landscaping', 'Facilities', 'Electrical', 'Plumbing', 'Other'];
 
-export default function IssuePage() {
-  const params = useParams();
+export default function IssuePage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const issueId = params.id as string;
+  const issueId = params.id;
   
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,9 +145,7 @@ export default function IssuePage() {
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
-  const bboxSize = 0.005;
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${issue.longitude - bboxSize},${issue.latitude - bboxSize},${issue.longitude + bboxSize},${issue.latitude + bboxSize}&layer=mapnik&marker=${issue.latitude},${issue.longitude}`;
-  const googleMapsUrl = `https://www.google.com/maps?q=${issue.latitude},${issue.longitude}`;
+  const bhuvanMapUrl = `https://bhuvan-app1.nrsc.gov.in/bhuvan2d/bhuvan/bhuvan2d.php?lat=${issue.latitude}&lon=${issue.longitude}&zoom=18`;
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -308,17 +305,17 @@ export default function IssuePage() {
                     <Separator className="my-6" />
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
-                        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block h-64 w-full rounded-lg overflow-hidden border group relative">
+                        <a href={bhuvanMapUrl} target="_blank" rel="noopener noreferrer" className="block h-64 w-full rounded-lg overflow-hidden border group relative">
                             <iframe
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0, pointerEvents: 'none' }}
                                 loading="lazy"
                                 allowFullScreen
-                                src={mapUrl}>
+                                src={bhuvanMapUrl}>
                             </iframe>
                             <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <span className="text-white font-bold text-lg">Open in Maps</span>
+                                <span className="text-white font-bold text-lg">Open in Bhuvan Maps</span>
                             </div>
                         </a>
                     </div>
