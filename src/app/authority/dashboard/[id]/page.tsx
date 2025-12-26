@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Issue } from '@/types/issue';
@@ -238,7 +238,7 @@ export default function IssuePage() {
                                 src={mapUrl}>
                             </iframe>
                             <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <span className="text-white font-bold text-lg">Open in Google Maps</span>
+                                <span className="text-white font-bold text-lg">Open in Maps</span>
                             </div>
                         </a>
                     </div>
@@ -249,5 +249,3 @@ export default function IssuePage() {
     </div>
   );
 }
-
-    
