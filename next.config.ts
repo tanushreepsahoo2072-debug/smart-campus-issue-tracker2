@@ -27,11 +27,17 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-pathname: '/**',
+        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'i.ibb.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'maps.googleapis.com',
         port: '',
         pathname: '/**',
       },

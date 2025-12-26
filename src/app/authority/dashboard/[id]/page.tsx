@@ -41,10 +41,11 @@ const priorityColorClass: { [key: string]: string } = {
 
 const categories: IssueCategory[] = ['Maintenance', 'Safety', 'IT Support', 'Landscaping', 'Facilities', 'Electrical', 'Plumbing', 'Other'];
 
-export default function IssuePage({ params }: { params: { id: string } }) {
+export default function IssuePage() {
+  const params = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const issueId = params.id;
+  const issueId = params.id as string;
   
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -145,7 +146,9 @@ export default function IssuePage({ params }: { params: { id: string } }) {
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
-  const bhuvanMapUrl = `https://bhuvan-app1.nrsc.gov.in/bhuvan2d/bhuvan/bhuvan2d.php?lat=${issue.latitude}&lon=${issue.longitude}&zoom=18`;
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${issue.latitude},${issue.longitude}`;
+  const googleMapsStaticUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${issue.latitude},${issue.longitude}&zoom=17&size=600x300&maptype=roadmap&markers=color:red%7C${issue.latitude},${issue.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}`;
+
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -305,17 +308,16 @@ export default function IssuePage({ params }: { params: { id: string } }) {
                     <Separator className="my-6" />
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
-                        <a href={bhuvanMapUrl} target="_blank" rel="noopener noreferrer" className="block h-64 w-full rounded-lg overflow-hidden border group relative">
-                            <iframe
-                                width="100%"
-                                height="100%"
-                                style={{ border: 0, pointerEvents: 'none' }}
-                                loading="lazy"
-                                allowFullScreen
-                                src={bhuvanMapUrl}>
-                            </iframe>
+                        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block w-full rounded-lg overflow-hidden border group relative">
+                             <Image
+                                src={googleMapsStaticUrl}
+                                alt="Map of issue location"
+                                width={600}
+                                height={300}
+                                className="w-full h-auto object-cover"
+                            />
                             <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <span className="text-white font-bold text-lg">Open in Bhuvan Maps</span>
+                                <span className="text-white font-bold text-lg">Open in Google Maps</span>
                             </div>
                         </a>
                     </div>
@@ -326,5 +328,3 @@ export default function IssuePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-    
