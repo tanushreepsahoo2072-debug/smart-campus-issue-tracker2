@@ -12,6 +12,7 @@ export interface AIAnalysis {
 export interface AIAnalysisPlus extends AIAnalysis {
   is_spam: boolean;
   merged_into: string | null;
+  is_duplicate: boolean;
 }
 
 export interface Issue extends AIAnalysisPlus {

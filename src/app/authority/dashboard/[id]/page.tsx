@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import type { Issue, IssueCategory, AIPriority } from '@/types/issue';
+import type { Issue, IssueCategory, AIPriority } from '@/types/complaint';
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown, MapPin, Undo2 } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown, Undo2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -140,7 +140,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
         const docRef = doc(firestore, 'issues', issueId);
         await updateDoc(docRef, {
             is_spam: false,
-            merged_into: null, // Clear the link to the original issue
+            merged_into: null,
             AI_COMMENT: `Manually marked as not a duplicate by authority. Original AI comment: ${issue?.AI_COMMENT || ''}`,
             updatedAt: serverTimestamp(),
         });
@@ -185,9 +185,6 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${issue.latitude},${issue.longitude}`;
-  const bhuvanUrl = `https://bhuvan-app1.nrsc.gov.in/bhuvan2d/bhuvan/bhuvan2d.php?lat=${issue.latitude}&lon=${issue.longitude}&zoom=14`;
-
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -203,16 +200,21 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
             <Card className="overflow-hidden rounded-2xl shadow-lg">
-                {issue.is_spam && issue.merged_into && (
+                {issue.is_spam === true && (
                     <Alert variant="destructive" className="rounded-b-none border-b-0">
                         <Bot className="h-4 w-4" />
                         <AlertTitle>Marked as Duplicate by AI</AlertTitle>
                         <AlertDescription>
-                            This issue was flagged as a duplicate of issue{' '}
-                            <Link href={`/authority/dashboard/${issue.merged_into}`} className="font-bold underline hover:text-destructive-foreground">
-                                #{issue.merged_into}
-                            </Link>
-                            . If this is incorrect, you can restore it.
+                            This issue was flagged as a potential duplicate. If this is incorrect, you can restore it.
+                            {issue.merged_into && (
+                                <>
+                                    {' '}
+                                    It was merged into issue{' '}
+                                    <Link href={`/authority/dashboard/${issue.merged_into}`} className="font-bold underline hover:text-destructive-foreground">
+                                        #{issue.merged_into.substring(0, 6)}...
+                                    </Link>
+                                </>
+                            )}
                         </AlertDescription>
                          <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -379,23 +381,6 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                         {isUpdating && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdating ? 'Updating...' : 'Save Changes'}
                     </Button>
-                    <Separator className="my-6" />
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
-                        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block relative aspect-video w-full rounded-lg overflow-hidden group">
-                           <iframe
-                            className="absolute inset-0 w-full h-full border-0 pointer-events-none"
-                            src={bhuvanUrl}
-                            loading="lazy"
-                            ></iframe>
-                           <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                               <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-black font-semibold py-2 px-4 rounded-full">
-                                   <MapPin className="h-5 w-5" />
-                                   View on Google Maps
-                               </div>
-                           </div>
-                        </a>
-                    </div>
                 </CardContent>
             </Card>
             <SimilarComplaints issueId={issueId} />
@@ -404,5 +389,3 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
     </div>
   );
 }
-
-    

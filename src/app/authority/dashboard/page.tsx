@@ -48,7 +48,7 @@ export default function AuthorityDashboardPage() {
               updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
             } as Complaint;
           })
-          .filter(complaint => complaint.AI === 1 && complaint.is_spam === false); 
+          .filter(complaint => complaint.AI === 1 && complaint.is_duplicate !== true); 
 
         setComplaints(newComplaints);
         setLoading(false);

@@ -25,6 +25,7 @@ export type Complaint = {
   AI_COMMENT: string;
   merged_into: string | null;
   ai_priority?: AIPriority;
+  is_duplicate: boolean;
 };
 export type Issue = {
   id: string;
@@ -49,4 +50,5 @@ export type Issue = {
   AI_COMMENT: string;
   merged_into: string | null;
   ai_priority?: AIPriority;
+  is_duplicate: boolean;
 };
