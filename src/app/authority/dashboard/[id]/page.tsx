@@ -261,21 +261,21 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                     <Separator className="my-6" />
 
                     <div className="space-y-2">
-                      <h3 className="flex items-center gap-2 mb-2 text-lg font-semibold">
-                        <MapPin className="h-5 w-5 text-primary" />
-                        Location
-                      </h3>
-                      <div className="relative w-full overflow-hidden border rounded-lg aspect-video">
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          className="pointer-events-none" 
-                          src={bhuvanMapUrl}
-                          title="Issue Location on Bhuvan Map"
-                          loading="lazy"
-                        ></iframe>
-                        <Link href={bhuvanMapUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0" aria-label="View location on Bhuvan Maps"></Link>
-                      </div>
+                        <h3 className="flex items-center gap-2 mb-2 text-lg font-semibold">
+                            <MapPin className="h-5 w-5 text-primary" />
+                            Location
+                        </h3>
+                        <Link 
+                            href={bhuvanMapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full overflow-hidden rounded-lg border aspect-video bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 transition-colors"
+                        >
+                            <div className="text-center">
+                                <p>View on Bhuvan Map</p>
+                                <p className="text-xs">Lat: {issue.latitude.toFixed(4)}, Lon: {issue.longitude.toFixed(4)}</p>
+                            </div>
+                        </Link>
                     </div>
                     
                     <Separator className="my-6" />
