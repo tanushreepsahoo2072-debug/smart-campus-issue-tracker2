@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import type { Issue } from '@/types/complaint';
-import { notFound } from 'next/navigation';
+import type { Issue } from '@/types/issue';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -18,12 +18,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IssueMap } from "@/components/issue-map";
-
-interface IssuePageProps {
-  params: {
-    id: string;
-  };
-}
 
 const statusIcons: { [key: string]: React.ReactNode } = {
   'Open': <FilePenLine className="h-4 w-4" />,
@@ -40,9 +34,11 @@ const priorityColorClass: { [key: string]: string } = {
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
 
-export default function IssuePage({ params }: IssuePageProps) {
+export default function IssuePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const params = useParams();
+  const issueId = params.id as string;
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -53,7 +49,7 @@ export default function IssuePage({ params }: IssuePageProps) {
     if (!firestore) return;
     setLoading(true);
 
-    const docRef = doc(firestore, 'issues', params.id);
+    const docRef = doc(firestore, 'issues', issueId);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -76,7 +72,7 @@ export default function IssuePage({ params }: IssuePageProps) {
     });
 
     return () => unsubscribe();
-  }, [firestore, params.id]);
+  }, [firestore, issueId]);
 
   const handleUpdate = async () => {
     if (!firestore || !issue || !newStatus) return;
@@ -110,11 +106,6 @@ export default function IssuePage({ params }: IssuePageProps) {
     return notFound();
   }
   
-  const location: google.maps.LatLngLiteral = {
-    lat: issue.latitude,
-    lng: issue.longitude,
-  };
-
   if (issue.AI === 0) {
     return (
         <div className="container mx-auto flex h-[calc(100vh-10rem)] max-w-5xl items-center justify-center p-4 md:p-8">
@@ -128,6 +119,8 @@ export default function IssuePage({ params }: IssuePageProps) {
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
+  const bboxSize = 0.005;
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${issue.longitude - bboxSize},${issue.latitude - bboxSize},${issue.longitude + bboxSize},${issue.latitude + bboxSize}&layer=mapnik&marker=${issue.latitude},${issue.longitude}`;
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -235,7 +228,14 @@ export default function IssuePage({ params }: IssuePageProps) {
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
                         <div className="h-64 w-full rounded-lg overflow-hidden border">
-                           <IssueMap issue={issue} location={location} />
+                           <iframe
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                loading="lazy"
+                                allowFullScreen
+                                src={mapUrl}>
+                            </iframe>
                         </div>
                     </div>
                 </CardContent>
