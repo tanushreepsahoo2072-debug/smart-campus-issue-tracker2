@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown, Undo2 } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown, Undo2, MapPin } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -185,6 +185,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
+  const bhuvanMapUrl = `https://bhuvan-app1.nrsc.gov.in/bhuvan2d/bhuvan/bhuvan2d.php?lat=${issue.latitude}&lon=${issue.longitude}&zoom=16`;
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -256,6 +257,24 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                 <CardContent className="p-6">
                     <CardTitle className="text-2xl font-bold leading-tight">{issue.title}</CardTitle>
                     <p className="mt-4 text-muted-foreground">{issue.description}</p>
+
+                    <Separator className="my-6" />
+
+                    <div className="space-y-2">
+                        <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
+                          <MapPin className="h-5 w-5 text-primary" />
+                          Location
+                        </h3>
+                        <div className="aspect-video w-full overflow-hidden rounded-lg border">
+                          <iframe
+                            width="100%"
+                            height="100%"
+                            src={bhuvanMapUrl}
+                            title="Issue Location on Bhuvan Map"
+                            loading="lazy"
+                          ></iframe>
+                        </div>
+                    </div>
                     
                     <Separator className="my-6" />
                     
@@ -299,7 +318,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
             </Card>
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
             <Card className="rounded-2xl shadow-lg">
                 <CardHeader>
                     <CardTitle>Update Issue</CardTitle>
