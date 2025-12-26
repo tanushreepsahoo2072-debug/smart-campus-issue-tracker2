@@ -185,7 +185,6 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
-  const bhuvanMapUrl = `https://bhuvan-app1.nrsc.gov.in/bhuvan2d/bhuvan/bhuvan2d.php?lat=${issue.latitude}&lon=${issue.longitude}&zoom=16`;
 
   return (
     <div className="container mx-auto max-w-5xl py-8">
@@ -257,26 +256,6 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                 <CardContent className="p-6">
                     <CardTitle className="text-2xl font-bold leading-tight">{issue.title}</CardTitle>
                     <p className="mt-4 text-muted-foreground">{issue.description}</p>
-
-                    <Separator className="my-6" />
-
-                    <div className="space-y-2">
-                        <h3 className="flex items-center gap-2 mb-2 text-lg font-semibold">
-                            <MapPin className="h-5 w-5 text-primary" />
-                            Location
-                        </h3>
-                        <Link 
-                            href={bhuvanMapUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block w-full overflow-hidden rounded-lg border aspect-video bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 transition-colors"
-                        >
-                            <div className="text-center">
-                                <p>View on Bhuvan Map</p>
-                                <p className="text-xs">Lat: {issue.latitude.toFixed(4)}, Lon: {issue.longitude.toFixed(4)}</p>
-                            </div>
-                        </Link>
-                    </div>
                     
                     <Separator className="my-6" />
                     
