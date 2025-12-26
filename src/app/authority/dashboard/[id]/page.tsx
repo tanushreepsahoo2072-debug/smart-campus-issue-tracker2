@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Issue } from '@/types/issue';
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -35,9 +35,10 @@ const priorityColorClass: { [key: string]: string } = {
 };
 
 export default function IssuePage({ params }: { params: { id: string } }) {
+  const resolvedParams = use(Promise.resolve(params));
   const firestore = useFirestore();
   const { toast } = useToast();
-  const issueId = params.id;
+  const issueId = resolvedParams.id;
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
