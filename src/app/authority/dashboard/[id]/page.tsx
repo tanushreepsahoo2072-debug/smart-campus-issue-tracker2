@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown, MapPin } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -41,10 +41,11 @@ const priorityColorClass: { [key: string]: string } = {
 
 const categories: IssueCategory[] = ['Maintenance', 'Safety', 'IT Support', 'Landscaping', 'Facilities', 'Electrical', 'Plumbing', 'Other'];
 
-export default function IssuePage({ params }: { params: { id: string } }) {
+export default function IssuePage({ params: paramsProp }: { params: { id: string } }) {
+  const params = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const issueId = params.id;
+  const issueId = (params.id || paramsProp.id) as string;
   
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -145,7 +146,7 @@ export default function IssuePage({ params }: { params: { id: string } }) {
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
-  const bhuvanMapUrl = `https://bhuvan-app1.nrsc.gov.in/bhuvan2d/bhuvan/bhuvan2d.php?lat=${issue.latitude}&lon=${issue.longitude}&zoom=14`;
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${issue.latitude},${issue.longitude}`;
 
 
   return (
@@ -306,21 +307,12 @@ export default function IssuePage({ params }: { params: { id: string } }) {
                     <Separator className="my-6" />
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
-                        <a href={bhuvanMapUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-64 rounded-lg overflow-hidden border group relative">
-                            <iframe
-                                src={bhuvanMapUrl}
-                                width="100%"
-                                height="100%"
-                                style={{ border: 0 }}
-                                allowFullScreen
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
-                                title="Issue Location on Bhuvan ISRO Map"
-                            ></iframe>
-                            <div className="absolute inset-0 bg-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <span className="text-white font-bold text-lg bg-black/50 p-2 rounded">Open in Bhuvan</span>
-                            </div>
-                        </a>
+                        <Button asChild variant="outline" className="w-full">
+                            <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
+                                <MapPin className="mr-2 h-4 w-4" />
+                                Open in Google Maps
+                            </a>
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -329,5 +321,3 @@ export default function IssuePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-    
