@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Issue } from '@/types/issue';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -34,10 +34,11 @@ const priorityColorClass: { [key: string]: string } = {
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
 
-export default function IssuePage({ params }: { params: { id: string } }) {
+export default function IssuePage() {
+  const params = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const issueId = params.id;
+  const issueId = params.id as string;
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -45,7 +46,7 @@ export default function IssuePage({ params }: { params: { id: string } }) {
   const [adminComments, setAdminComments] = useState('');
 
   useEffect(() => {
-    if (!firestore) return;
+    if (!firestore || !issueId) return;
     setLoading(true);
 
     const docRef = doc(firestore, 'issues', issueId);
@@ -248,3 +249,5 @@ export default function IssuePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
+    
