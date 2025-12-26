@@ -5,13 +5,13 @@ export type IssueStatus = 'Open' | 'In Progress' | 'Resolved' | 'Denied' | 'Deni
 export type AIPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 
 export interface AIAnalysis {
-  ai_priority: AIPriority;
+  ai_priority?: AIPriority;
   ai_spam_score: number;
 }
 
 export interface AIAnalysisPlus extends AIAnalysis {
   is_spam: boolean;
-  spam_reason: string;
+  merged_into: string | null;
 }
 
 export interface Issue extends AIAnalysisPlus {
