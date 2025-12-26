@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Issue } from '@/types/issue';
@@ -35,10 +35,9 @@ const priorityColorClass: { [key: string]: string } = {
 };
 
 export default function IssuePage({ params }: { params: { id: string } }) {
-  const resolvedParams = use(Promise.resolve(params));
   const firestore = useFirestore();
   const { toast } = useToast();
-  const issueId = resolvedParams.id;
+  const issueId = params.id;
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -221,7 +220,7 @@ export default function IssuePage({ params }: { params: { id: string } }) {
                             className="min-h-[120px]"
                         />
                     </div>
-                    <Button onClick={handleUpdate} disabled={isUpdating || newStatus === issue.currentStatus && adminComments === issue.admin_comments} className="w-full">
+                    <Button onClick={handleUpdate} disabled={isUpdating || newStatus === issue.currentStatus && adminComments === (issue.admin_comments || '')} className="w-full">
                         {isUpdating && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdating ? 'Updating...' : 'Save Changes'}
                     </Button>
