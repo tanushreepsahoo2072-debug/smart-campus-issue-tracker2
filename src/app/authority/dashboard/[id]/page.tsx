@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import type { Issue } from '@/types/issue';
+import type { Issue, IssueCategory, AIPriority } from '@/types/issue';
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,8 +16,11 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Bot, FilePenLine, Wrench, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 const statusIcons: { [key: string]: React.ReactNode } = {
   'Open': <FilePenLine className="h-4 w-4" />,
@@ -25,6 +28,8 @@ const statusIcons: { [key: string]: React.ReactNode } = {
   'Resolved': <CheckCircle className="h-4 w-4 text-green-500" />,
   'Denied': <XCircle className="h-4 w-4 text-destructive" />,
 };
+
+const priorityOrder: AIPriority[] = ['Low', 'Medium', 'High', 'Critical'];
 
 const priorityColorClass: { [key: string]: string } = {
   'Critical': 'bg-red-600 border-red-600 text-white',
@@ -34,16 +39,23 @@ const priorityColorClass: { [key: string]: string } = {
   'Not-Assigned': 'bg-gray-400 border-gray-400 text-white',
 };
 
+const categories: IssueCategory[] = ['Maintenance', 'Safety', 'IT Support', 'Landscaping', 'Facilities', 'Electrical', 'Plumbing', 'Other'];
+
 export default function IssuePage() {
   const params = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
   const issueId = params.id as string;
+  
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // State for editable fields
   const [newStatus, setNewStatus] = useState<Issue['currentStatus'] | ''>('');
   const [adminComments, setAdminComments] = useState('');
+  const [newCategory, setNewCategory] = useState<IssueCategory | ''>('');
+  const [newPriority, setNewPriority] = useState<AIPriority | 'Not-Assigned'>('Not-Assigned');
 
   useEffect(() => {
     if (!firestore || !issueId) return;
@@ -60,8 +72,11 @@ export default function IssuePage() {
           updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
         } as Issue;
         setIssue(formattedIssue);
+        // Initialize state with fetched data
         setNewStatus(formattedIssue.currentStatus);
         setAdminComments(formattedIssue.admin_comments || '');
+        setNewCategory(formattedIssue.category || '');
+        setNewPriority(formattedIssue.ai_priority || 'Not-Assigned');
       } else {
         setIssue(null);
       }
@@ -73,6 +88,16 @@ export default function IssuePage() {
 
     return () => unsubscribe();
   }, [firestore, issueId]);
+  
+  const hasChanges = useMemo(() => {
+    if (!issue) return false;
+    return (
+      newStatus !== issue.currentStatus ||
+      adminComments !== (issue.admin_comments || '') ||
+      newCategory !== (issue.category || '') ||
+      newPriority !== (issue.ai_priority || 'Not-Assigned')
+    );
+  }, [issue, newStatus, adminComments, newCategory, newPriority]);
 
   const handleUpdate = async () => {
     if (!firestore || !issue || !newStatus) return;
@@ -83,6 +108,8 @@ export default function IssuePage() {
       await updateDoc(docRef, {
         currentStatus: newStatus,
         admin_comments: adminComments,
+        category: newCategory,
+        ai_priority: newPriority,
         updatedAt: serverTimestamp(),
       });
       toast({ title: 'Success', description: 'Issue has been updated.' });
@@ -149,9 +176,6 @@ export default function IssuePage() {
                         />
                     )}
                     </div>
-                    <Badge className={`absolute left-4 top-4 font-bold ${priorityColorClass[priorityText]}`}>
-                        {priorityText} Priority
-                    </Badge>
                 </CardHeader>
                 <CardContent className="p-6">
                     <CardTitle className="text-2xl font-bold leading-tight">{issue.title}</CardTitle>
@@ -166,6 +190,14 @@ export default function IssuePage() {
                                 {statusIcons[issue.currentStatus]} {issue.currentStatus}
                             </span>
                         </div>
+                         <div className="flex justify-between items-center">
+                           <span className="font-medium text-muted-foreground">Category</span>
+                           <span className="font-semibold">{issue.category}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                           <span className="font-medium text-muted-foreground">Priority</span>
+                           <Badge className={`${priorityColorClass[priorityText]}`}>{priorityText}</Badge>
+                         </div>
                     </div>
                     
                     {issue.admin_comments && (
@@ -194,13 +226,13 @@ export default function IssuePage() {
         <div className="lg:col-span-1">
             <Card className="rounded-2xl shadow-lg">
                 <CardHeader>
-                    <CardTitle>Update Status</CardTitle>
-                    <CardDescription>Change the issue status and add comments.</CardDescription>
+                    <CardTitle>Update Issue</CardTitle>
+                    <CardDescription>Change the status, category, priority, and add comments.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">New Status</label>
-                        <Select value={newStatus || ''} onValueChange={(value) => setNewStatus(value as Issue['currentStatus'])}>
+                        <label className="text-sm font-medium">Status</label>
+                        <Select value={newStatus || ''} onValueChange={(value) => setNewStatus(value as Issue['currentStatus'])} disabled={isUpdating}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a new status" />
                             </SelectTrigger>
@@ -212,16 +244,64 @@ export default function IssuePage() {
                             </SelectContent>
                         </Select>
                     </div>
+                    
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Category</label>
+                        <Select value={newCategory || ''} onValueChange={(value) => setNewCategory(value as IssueCategory)} disabled={isUpdating}>
+                            <SelectTrigger className={cn(newCategory !== issue.category && 'ring-2 ring-accent')}>
+                                <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Priority</label>
+                       <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("w-full justify-between", newPriority !== issue.ai_priority && 'ring-2 ring-accent')} disabled={isUpdating}>
+                              <span className={cn('font-bold', priorityColorClass[newPriority].replace('bg-', 'text-').replace('-600','').replace('-500',''))}>
+                                {newPriority}
+                              </span>
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <div className="flex rounded-md overflow-hidden">
+                            {priorityOrder.map((p) => (
+                              <Button
+                                key={p}
+                                variant={newPriority === p ? 'default' : 'ghost'}
+                                onClick={() => setNewPriority(p)}
+                                className={cn(
+                                    "rounded-none",
+                                    newPriority === p ? priorityColorClass[p] : 'text-black',
+                                    newPriority === p ? `hover:${priorityColorClass[p]}` : ''
+                                )}
+                              >
+                                {p}
+                              </Button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Admin Comments</label>
                         <Textarea
                             placeholder="Provide feedback or notes..."
                             value={adminComments}
                             onChange={(e) => setAdminComments(e.target.value)}
-                            className="min-h-[120px]"
+                            className={cn("min-h-[120px]", adminComments !== (issue.admin_comments || '') && 'ring-2 ring-accent')}
+                            disabled={isUpdating}
                         />
                     </div>
-                    <Button onClick={handleUpdate} disabled={isUpdating || newStatus === issue.currentStatus && adminComments === (issue.admin_comments || '')} className="w-full">
+                    <Button onClick={handleUpdate} disabled={isUpdating || !hasChanges} className="w-full">
                         {isUpdating && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                         {isUpdating ? 'Updating...' : 'Save Changes'}
                     </Button>
@@ -249,3 +329,5 @@ export default function IssuePage() {
     </div>
   );
 }
+
+    
