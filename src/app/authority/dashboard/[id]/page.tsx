@@ -147,6 +147,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${issue.latitude},${issue.longitude}`;
+  const bhuvanUrl = `https://bhuvan-app1.nrsc.gov.in/bhuvan2d/bhuvan/bhuvan2d.php?lat=${issue.latitude}&lon=${issue.longitude}&zoom=14`;
 
 
   return (
@@ -307,12 +308,19 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                     <Separator className="my-6" />
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Issue Location</h3>
-                        <Button asChild variant="outline" className="w-full">
-                            <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-                                <MapPin className="mr-2 h-4 w-4" />
-                                Open in Google Maps
-                            </a>
-                        </Button>
+                        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block relative aspect-video w-full rounded-lg overflow-hidden group">
+                           <iframe
+                            className="absolute inset-0 w-full h-full border-0"
+                            src={bhuvanUrl}
+                            loading="lazy"
+                            ></iframe>
+                           <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                               <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-black font-semibold py-2 px-4 rounded-full">
+                                   <MapPin className="h-5 w-5" />
+                                   View on Google Maps
+                               </div>
+                           </div>
+                        </a>
                     </div>
                 </CardContent>
             </Card>
