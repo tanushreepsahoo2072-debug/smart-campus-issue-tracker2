@@ -2,8 +2,8 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow writes to the complaints folder for anyone
-    match /complaints/{issueId}/{fileName} {
+    // Allow writes to the issues folder for anyone
+    match /issues/{issueId}/{fileName} {
       allow write: if true;
     }
 
