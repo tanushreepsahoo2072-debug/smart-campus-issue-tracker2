@@ -57,3 +57,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body {
+    background: white;
+  }
+  
+  header,
+  .no-print {
+    display: none;
+  }
+  
+  main {
+    padding: 0;
+    margin: 0;
+  }
+
+  .printable-area {
+    display: block !important;
+  }
+  
+  @page {
+    size: auto;
+    margin: 0.5in;
+  }
+
+  .printable-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

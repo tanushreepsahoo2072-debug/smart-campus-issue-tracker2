@@ -18,7 +18,7 @@ import { Copy } from 'lucide-react';import { Badge } from '@/components/ui/badge
 import { Separator } from '@/components/ui/separator';
 
 import { fetchComplaintById, type ComplaintDetails } from './actions';
-import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine, Bot, Link2,AlertTriangle } from 'lucide-react';
+import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine, Bot, Link2,AlertTriangle, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -61,7 +61,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
     }
   };
   return (
-    <Card className="flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
+    <Card className="printable-card flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
       {complaint.imageUrls.length > 0 && (
         <div className="relative h-48 w-full">
           <Image
@@ -74,6 +74,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
           <Badge
             className={cn(
               "absolute top-2 left-2 z-10 bg-red-500 border-red-500 text-white",
+              "no-print"
             )}
           >
             AI Checked
@@ -83,6 +84,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
             <Badge
               className={cn(
                 "absolute top-2 right-2 z-10 bg-green-500 border-green-500 text-white",
+                "no-print"
               )}
             >
               Human Checked
@@ -108,7 +110,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
       {complaint.is_spam && complaint.merged_into && (
-        <Alert variant="default" className="bg-blue-50 border-blue-200">
+        <Alert variant="default" className="bg-blue-50 border-blue-200 no-print">
           <Link2 className="h-4 w-4 text-blue-600" />
           <AlertTitle className="text-blue-800">This is a Duplicate Issue</AlertTitle>
           <AlertDescription className="text-blue-700">
@@ -134,14 +136,33 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
       )}
         <p className="text-muted-foreground">{complaint.description}</p>
         
-        <div className="flex items-center text-sm">
-            {statusIcons[complaint.currentStatus]}
-            <span className="ml-2 font-medium">{complaint.currentStatus}</span>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+              <span className="font-medium text-muted-foreground">Status</span>
+              <span className="flex items-center gap-2 font-semibold">
+                  {statusIcons[complaint.currentStatus]} {complaint.currentStatus}
+              </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium text-muted-foreground">Email</span>
+            <span className="font-semibold">{complaint.email}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium text-muted-foreground">Frequency</span>
+            <span className="font-semibold">{complaint.frequency}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium text-muted-foreground">Location</span>
+            <span className="font-semibold">
+              {complaint.latitude.toFixed(5)}, {complaint.longitude.toFixed(5)}
+            </span>
+          </div>
         </div>
+
         {isAiProcessed && complaint.AI_COMMENT && (
           <>
             <Separator />
-            <div>
+            <div className="no-print">
               <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                 <Bot className="h-4 w-4" />
                 AI Analysis
@@ -227,10 +248,14 @@ export default function TrackStatusPage() {
     setErrorMessage('');
     setCurrentTrackId(trackId); // This will trigger the useEffect listener
   };
+  
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
-      <div className="mb-8 text-center">
+      <div className="mb-8 text-center no-print">
         <h1 className="text-3xl font-bold tracking-tight">Track Complaint</h1>
         <p className="mt-2 text-muted-foreground">
           Enter your Track ID below to see the current status of your issue.
@@ -238,7 +263,7 @@ export default function TrackStatusPage() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mb-8 mt-px flex items-center gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mb-8 mt-px flex items-center gap-4 no-print">
           <FormField
             control={form.control}
             name="trackId"
@@ -263,15 +288,15 @@ export default function TrackStatusPage() {
         </form>
       </Form>
       
-      <div className="mt-8">
+      <div className="mt-8 printable-area">
         {status === 'loading' && (
-          <div className="flex justify-center p-8">
+          <div className="flex justify-center p-8 no-print">
             <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
         
         {status === 'processing' && (
-            <Alert>
+            <Alert className="no-print">
                 <Bot className="h-4 w-4" />
                 <AlertTitle>AI Verification in Progress...</AlertTitle>
                 <AlertDescription>Our AI is currently analyzing your submission for authenticity, priority, and duplicates. This page will update automatically once the analysis is complete.</AlertDescription>
@@ -279,7 +304,7 @@ export default function TrackStatusPage() {
         )}
         
         {status === 'not-found' && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="no-print">
                 <Info className="h-4 w-4" />
                 <AlertTitle>Not Found</AlertTitle>
                 <AlertDescription>Invalid Track ID. Please check the ID and try again.</AlertDescription>
@@ -287,7 +312,7 @@ export default function TrackStatusPage() {
         )}
         
         {status === 'error' && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="no-print">
                 <ServerCrash className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{errorMessage}</AlertDescription>
@@ -295,7 +320,15 @@ export default function TrackStatusPage() {
         )}
 
         {status === 'found' && complaint && (
-          <IssueCard complaint={complaint} />
+          <div className="space-y-4">
+            <div className="flex justify-end no-print">
+                <Button onClick={handlePrint} variant="outline">
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print to PDF
+                </Button>
+            </div>
+            <IssueCard complaint={complaint} />
+          </div>
         )}
       </div>
     </div>
