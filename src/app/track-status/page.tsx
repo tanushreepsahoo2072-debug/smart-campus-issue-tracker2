@@ -18,10 +18,12 @@ import { Copy } from 'lucide-react';import { Badge } from '@/components/ui/badge
 import { Separator } from '@/components/ui/separator';
 
 import { fetchComplaintById, type ComplaintDetails } from './actions';
-import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine, Bot, Link2,AlertTriangle } from 'lucide-react';
+import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine, Bot, Link2,AlertTriangle, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { generateComplaintPDF } from '@/components/pdf';
+
 
 const formSchema = z.object({
   trackId: z.string().min(1, 'Track ID cannot be empty.'),
@@ -61,7 +63,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
     }
   };
   return (
-    <Card className="flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
+    <Card className=" flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
       {complaint.imageUrls.length > 0 && (
         <div className="relative h-48 w-full">
           <Image
@@ -108,7 +110,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
       {complaint.is_spam && complaint.merged_into && (
-        <Alert variant="default" className="bg-blue-50 border-blue-200">
+        <Alert variant="default" className="bg-blue-50 border-blue-200 ">
           <Link2 className="h-4 w-4 text-blue-600" />
           <AlertTitle className="text-blue-800">This is a Duplicate Issue</AlertTitle>
           <AlertDescription className="text-blue-700">
@@ -133,11 +135,11 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
         </Alert>
       )}
         <p className="text-muted-foreground">{complaint.description}</p>
-        
         <div className="flex items-center text-sm">
             {statusIcons[complaint.currentStatus]}
             <span className="ml-2 font-medium">{complaint.currentStatus}</span>
         </div>
+
         {isAiProcessed && complaint.AI_COMMENT && (
           <>
             <Separator />
@@ -227,10 +229,12 @@ export default function TrackStatusPage() {
     setErrorMessage('');
     setCurrentTrackId(trackId); // This will trigger the useEffect listener
   };
+  
+  
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
-      <div className="mb-8 text-center">
+      <div className="mb-8 text-center ">
         <h1 className="text-3xl font-bold tracking-tight">Track Complaint</h1>
         <p className="mt-2 text-muted-foreground">
           Enter your Track ID below to see the current status of your issue.
@@ -238,7 +242,7 @@ export default function TrackStatusPage() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mb-8 mt-px flex items-center gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mb-8 mt-px flex items-center gap-4 ">
           <FormField
             control={form.control}
             name="trackId"
@@ -263,15 +267,15 @@ export default function TrackStatusPage() {
         </form>
       </Form>
       
-      <div className="mt-8">
+      <div className="mt-8 ">
         {status === 'loading' && (
-          <div className="flex justify-center p-8">
+          <div className="flex justify-center p-8 ">
             <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
         
         {status === 'processing' && (
-            <Alert>
+            <Alert >
                 <Bot className="h-4 w-4" />
                 <AlertTitle>AI Verification in Progress...</AlertTitle>
                 <AlertDescription>Our AI is currently analyzing your submission for authenticity, priority, and duplicates. This page will update automatically once the analysis is complete.</AlertDescription>
@@ -279,7 +283,7 @@ export default function TrackStatusPage() {
         )}
         
         {status === 'not-found' && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" >
                 <Info className="h-4 w-4" />
                 <AlertTitle>Not Found</AlertTitle>
                 <AlertDescription>Invalid Track ID. Please check the ID and try again.</AlertDescription>
@@ -295,7 +299,16 @@ export default function TrackStatusPage() {
         )}
 
         {status === 'found' && complaint && (
-          <IssueCard complaint={complaint} />
+          <div className="space-y-4">
+            <div className="flex justify-end ">
+                <Button onClick={() => generateComplaintPDF(complaint)}
+                style={{ marginTop: '20px', padding: '10px 20px' }}
+                >
+                  Download PDF
+                </Button>
+            </div>
+            <IssueCard complaint={complaint} />
+          </div>
         )}
       </div>
     </div>
