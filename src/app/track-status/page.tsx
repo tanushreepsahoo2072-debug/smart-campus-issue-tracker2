@@ -22,6 +22,8 @@ import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, 
 import { cn } from '@/lib/utils';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { generateComplaintPDF } from '@/components/pdf';
+
 
 const formSchema = z.object({
   trackId: z.string().min(1, 'Track ID cannot be empty.'),
@@ -228,7 +230,7 @@ export default function TrackStatusPage() {
     setCurrentTrackId(trackId); // This will trigger the useEffect listener
   };
   
-  const handlePrint = () => {};
+  
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
@@ -298,10 +300,11 @@ export default function TrackStatusPage() {
 
         {status === 'found' && complaint && (
           <div className="space-y-4">
-            <div className="flex justify-end no-print">
-                <Button onClick={handlePrint} variant="outline">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print to PDF
+            <div className="flex justify-end ">
+                <Button onClick={() => generateComplaintPDF(complaint)}
+                style={{ marginTop: '20px', padding: '10px 20px' }}
+                >
+                  Download PDF
                 </Button>
             </div>
             <IssueCard complaint={complaint} />
