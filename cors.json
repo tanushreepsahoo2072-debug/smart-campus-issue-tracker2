@@ -1,0 +1,16 @@
+[
+  {
+    "origin": [
+      "https://9000-firebase-ai-1766572714593.cluster-aic6jbiihrhmyrqafasatvzbwe.cloudworkstations.dev"
+      "http://localhost:3000",
+      "http://localhost:9000",
+      "https://9000-firebase-ai-1766572714593.cluster-aic6jbiihrhmyrqafasatvzbwe.cloudworkstations.dev"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "responseHeader": ["Content-Type", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
+]
+
+
+

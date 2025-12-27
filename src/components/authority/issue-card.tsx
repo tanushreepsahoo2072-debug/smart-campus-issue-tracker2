@@ -37,7 +37,7 @@ export default function IssueCard({ complaint }: IssueCardProps) {
   return (
     <Card className="flex h-full w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl hover:-translate-y-1">
       <CardHeader className="relative p-0">
-        <div className="aspect-video w-full bg-muted">
+        <div className="relative aspect-video w-full bg-muted">
           {complaint.imageUrls && complaint.imageUrls.length > 0 && (
             <Image
               src={complaint.imageUrls[0]}

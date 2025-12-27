@@ -1,4 +1,4 @@
-import ComplaintForm from '@/components/complaint-form';
+import IssueForm from '@/components/issue-form';
 
 export default function LodgeComplaintPage() {
   return (
@@ -9,7 +9,7 @@ export default function LodgeComplaintPage() {
           Fill out the form below to report an issue in your community.
         </p>
       </div>
-      <ComplaintForm />
+      <IssueForm />
     </div>
   );
 }
