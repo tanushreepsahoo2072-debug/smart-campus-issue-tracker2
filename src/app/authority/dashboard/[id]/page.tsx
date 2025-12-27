@@ -185,7 +185,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   }
   
   const priorityText = issue.ai_priority || 'Not-Assigned';
-  const openStreetMapUrl = issue ? `https://www.openstreetmap.org/export/embed.html?bbox=${issue.longitude-0.004},${issue.latitude-0.002},${issue.longitude+0.004},${issue.latitude+0.002}&layer=mapnik&marker=${issue.latitude},${issue.longitude}` : '';
+  const googleMapsEmbedUrl = issue ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${issue.latitude},${issue.longitude}` : '';
   const googleMapsUrl = issue ? `https://www.google.com/maps?q=${issue.latitude},${issue.longitude}` : '';
 
   return (
@@ -398,13 +398,15 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
               </CardHeader>
               <CardContent>
                 <Link href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="block aspect-video w-full overflow-hidden rounded-lg border relative group">
-                  {openStreetMapUrl && (
+                  {googleMapsEmbedUrl && (
                     <iframe
                       width="100%"
                       height="100%"
-                      style={{ border: 0, pointerEvents: 'none' }}
+                      style={{ border: 0 }}
                       loading="lazy"
-                      src={openStreetMapUrl}
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={googleMapsEmbedUrl}
                       title={`Map location for ${issue.title}`}
                     ></iframe>
                   )}
