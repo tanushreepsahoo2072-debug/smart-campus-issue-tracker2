@@ -1,6 +1,6 @@
-import html2pdf from 'html2pdf.js';
-import {Complaint} from '@/types/complaint'
 
+import {Complaint} from '@/types/complaint';
+declare const html2pdf: any;
 export const generateComplaintPDF = (Complaint:Complaint) => {
   // Hidden div create dynamically (DOM me add aur remove karenge)
   const element = document.createElement('div');

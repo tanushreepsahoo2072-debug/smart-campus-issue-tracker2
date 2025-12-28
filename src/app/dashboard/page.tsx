@@ -15,7 +15,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
-          <Link href="/lodge-complaint">
+          <Link href="/lodge-issue">
             <Card className="flex h-full transform-gpu flex-col justify-between rounded-2xl shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl">
               <CardHeader>
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">

@@ -16,8 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Copy } from 'lucide-react';import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-
-import { fetchComplaintById, type ComplaintDetails } from './actions';
+import {Complaint} from '@/types/complaint';
+import { fetchComplaintById} from './actions';
 import { LoaderCircle, Search, Wrench, CheckCircle, XCircle, Info, ServerCrash, FilePenLine, Bot, Link2,AlertTriangle, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -46,14 +46,12 @@ const priorityColorClass: { [key: string]: string } = {
   Low: "bg-green-500 border-green-500 text-white",
   "Not-Assigned": "bg-gray-400 border-gray-400 text-black",
 };
-function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
-  const isDeniedai = complaint.currentStatus === 'Denied by AI';
+function IssueCard({ complaint }: { complaint: Complaint }) {
   const isAiProcessed = complaint.AI === 1;
   const isHumanProcessed = complaint.AI === 2;
   const { toast } = useToast();
 
-  const showAiComment = isDeniedai && complaint.AI_COMMENT && !complaint.updatedAt;
-  const handleCopyToClipboard = () => {
+   const handleCopyToClipboard = () => {
     if (complaint.merged_into) {
       navigator.clipboard.writeText(complaint.merged_into);
       toast({
@@ -62,6 +60,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
       });
     }
   };
+
   return (
     <Card className=" flex w-full flex-col overflow-hidden rounded-2xl shadow-lg transition-all hover:shadow-xl">
       {complaint.imageUrls.length > 0 && (
@@ -140,7 +139,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
             <span className="ml-2 font-medium">{complaint.currentStatus}</span>
         </div>
 
-        {isAiProcessed && complaint.AI_COMMENT && (
+        {isAiProcessed && complaint.AI_COMMENT &&(
           <>
             <Separator />
             <div>
@@ -180,7 +179,7 @@ function IssueCard({ complaint }: { complaint: ComplaintDetails }) {
 export default function TrackStatusPage() {
   const firestore = useFirestore();
   const [status, setStatus] = useState<'idle' | 'loading' | 'found' | 'processing' | 'not-found' | 'error'>('idle');
-  const [complaint, setComplaint] = useState<ComplaintDetails | null>(null);
+  const [complaint, setComplaint] = useState<Complaint | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
 
@@ -298,7 +297,7 @@ export default function TrackStatusPage() {
             </Alert>
         )}
 
-        {status === 'found' && complaint && (
+       {status === 'found' && complaint && (
           <div className="space-y-4">
             <div className="flex justify-end ">
                 <Button onClick={() => generateComplaintPDF(complaint)}

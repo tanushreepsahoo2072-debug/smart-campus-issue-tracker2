@@ -3,26 +3,27 @@ export type IssueCategory = 'Maintenance' | 'Safety' | 'IT Support' | 'Landscapi
 export type IssueStatus = 'Open' | 'In Progress' | 'Resolved' | 'Denied' | 'Denied by AI';
 export type AIPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 export type Complaint = {
-  //id: string;
-  //title: string;
-  //description: string;
-  //latitude: number;
-  //longitude: number;
-  //imageUrls: string[];
+  id: string;
+  title: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  imageUrls: string[];
   admin_comments: string;
-  //category: IssueCategory;
-  //currentStatus: IssueStatus;
-  //assignedTo: string;
-  //timestamp: Timestamp | string; // Can be a server timestamp on write, string on read
-  //frequency: number;
-  //createdAt: string // ISO string
-  //updatedAt:  string; // ISO string
-  //is_spam: boolean;
+  category: IssueCategory;
+  currentStatus: IssueStatus;
+  assignedTo: string;
+  timestamp: Timestamp | string; // Can be a server timestamp on write, string on read
+  frequency: number;
+  createdAt: string // ISO string
+  updatedAt:  string; // ISO string
+  is_spam: boolean;
   AI: number; // 0: pending, 1: complete, -1: error
-  //AI_COMMENT: string;
-  //merged_into: string | null;
-  //ai_priority?: AIPriority;
-  //is_duplicate: boolean;
+  AI_COMMENT: string;
+  merged_into: string | null;
+  ai_priority?: AIPriority;
+  is_duplicate: boolean;
+  email: string;
 };
 export type Issue = {
   id: string;
