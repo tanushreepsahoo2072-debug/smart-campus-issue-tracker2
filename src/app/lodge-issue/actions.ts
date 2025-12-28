@@ -87,7 +87,7 @@ async function analyzeIssueWithAI(issueId: string, data: IssueData) {
 
     // 2. Prepare for Gemini API call
     console.log('[AI_STEP] 2. Preparing prompt for Gemini API call...');
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
     const nearbyIssuesText = candidates.length
       ? candidates.map(c => `- ID: ${c.id}, Title: "${c.title}", Category: ${c.category}`).join('\n')

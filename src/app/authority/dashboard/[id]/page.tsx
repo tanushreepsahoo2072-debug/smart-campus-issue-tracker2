@@ -339,35 +339,30 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                     
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Priority</label>
-                       <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className={cn("w-full justify-between", newPriority !== issue.ai_priority && 'ring-2 ring-accent')} disabled={isUpdating}>
-                              <span className={cn('font-bold', priorityColorClass[newPriority].replace('bg-', 'text-').replace('-600','').replace('-500',''))}>
-                                {newPriority}
-                              </span>
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <div className="flex rounded-md overflow-hidden">
-                            {priorityOrder.map((p) => (
-                              <Button
-                                key={p}
-                                variant={newPriority === p ? 'default' : 'ghost'}
-                                onClick={() => setNewPriority(p)}
-                                className={cn(
-                                    "rounded-none",
-                                    newPriority === p ? priorityColorClass[p] : 'text-black',
-                                    newPriority === p ? `hover:${priorityColorClass[p]}` : ''
-                                )}
-                              >
-                                {p}
-                              </Button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <div className="grid grid-cols-4 gap-2">
+                        {priorityOrder.map((p) => {
+                          const isActive = newPriority === p;
+                          return (
+                          <Button
+                          key={p}
+                          type="button"
+                          variant="outline"
+                          disabled={isUpdating}
+                          onClick={() => setNewPriority(p)}
+                          className={cn(
+                            "font-semibold transition-all",
+                            isActive
+                            ? priorityColorClass[p]
+                            : "bg-background text-foreground hover:bg-muted"
+                          )}
+                          >
+                            {p}
+                            </Button>
+                          );
+                        })}
+                      </div>
                     </div>
+
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Admin Comments</label>
