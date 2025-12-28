@@ -266,6 +266,7 @@ export async function handleIssueSubmission(
           is_spam: false,
           AI_COMMENT: '',
           AI: 0, // Mark as pending AI analysis
+          is_duplicate: false,
         });
 
         const issueId = issueDocRef.id;

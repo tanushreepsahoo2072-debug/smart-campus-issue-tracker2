@@ -75,7 +75,7 @@ export const generateComplaintPDF = (complaint: Complaint) => {
 <div class="container">
 
   <div class="header">
-    <img src="/civicconnect-logo.png" />
+  
     <h2>Smart Campus Issue Report</h2>
   </div>
 

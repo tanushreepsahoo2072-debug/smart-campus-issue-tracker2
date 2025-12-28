@@ -202,7 +202,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
             <Card className="overflow-hidden rounded-2xl shadow-lg">
-                {issue.is_spam === true && (
+                {issue.is_duplicate === true && (
                     <Alert variant="destructive" className="rounded-b-none border-b-0">
                         <Bot className="h-4 w-4" />
                         <AlertTitle>Marked as Duplicate by AI</AlertTitle>

@@ -41,8 +41,6 @@ export type Issue = {
   frequency: number;
   createdAt: string // ISO string
   updatedAt:  string; // ISO string
-  predicted_resolution_time: string;
-  ai_spam_score: number;
   is_spam: boolean;
   AI: number; // 0: pending, 1: complete, -1: error
   AI_COMMENT: string;
