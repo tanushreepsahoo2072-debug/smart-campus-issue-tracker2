@@ -63,7 +63,7 @@ export async function fetchComplaintById(id: string): Promise<FetchResult> {
     let displayData = originalData;
 
     // If it's a duplicate, fetch the data from the original issue
-    if (originalData.is_spam === true && originalData.merged_into) {
+    if (originalData.is_duplicate === true && originalData.merged_into) {
         const mergedData = await fetchComplaintData(originalData.merged_into);
         if (mergedData) {
             // Combine original submission details with the status of the main issue
@@ -92,11 +92,13 @@ export async function fetchComplaintById(id: string): Promise<FetchResult> {
       createdAt: displayData.createdAt ? formatTimestamp(displayData.createdAt) : '',
       updatedAt: displayData.updatedAt ? formatUpdateTimestamp(displayData.updatedAt) : null,
       admin_comments: displayData.admin_comments || '',
-      is_spam: originalData.is_spam, // Always reflect original spam status
+      is_fake: originalData.is_fake, // Always reflect original FAKE status
       AI: displayData.AI || 0,
       AI_COMMENT: originalData.AI_COMMENT || '',
       merged_into: originalData.merged_into,
       ai_priority: displayData.ai_priority || 'Not-Assigned',
+      timestamp:displayData.createdAt ? formatTimestamp(displayData.createdAt) : '', // Can be a server timestamp on write, string on read
+      is_duplicate: originalData.is_duplicate,
     };
 
     return { status: 'success', data: complaintDetails };

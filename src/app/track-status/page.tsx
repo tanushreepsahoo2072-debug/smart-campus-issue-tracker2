@@ -108,7 +108,7 @@ function IssueCard({ complaint }: { complaint: Complaint }) {
         </p>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
-      {complaint.is_spam && complaint.merged_into && (
+      {complaint.is_duplicate && complaint.merged_into && (
         <Alert variant="default" className="bg-blue-50 border-blue-200 ">
           <Link2 className="h-4 w-4 text-blue-600" />
           <AlertTitle className="text-blue-800">This is a Duplicate Issue</AlertTitle>

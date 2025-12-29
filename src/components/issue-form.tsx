@@ -38,7 +38,7 @@ import { useFirestore } from '@/firebase';
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
@@ -53,7 +53,7 @@ const formSchema = z.object({
     .refine(
       (files) =>
         !files || files.every((file) => ALLOWED_FILE_TYPES.includes(file.type)),
-      'Only .jpg, .jpeg, .png, .webp, and .gif formats are supported.'
+      'Only .jpg, .jpeg, .png and .webp formats are supported.'
     )
     .refine(
       (files) => !files || files.every((file) => file.size <= MAX_FILE_SIZE),

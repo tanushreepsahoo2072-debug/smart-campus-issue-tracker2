@@ -105,7 +105,7 @@ async function analyzeIssueWithAI(issueId: string, data: IssueData) {
 
       Perform the following tasks and return your decision ONLY in the specified JSON format.
 
-      Task 1: Safety & Authenticity. Check the image. If it is offensive, a meme, a stock photo, clearly AI-generated, or completely unrelated to a plausible campus maintenance issue, set "is_spam" to true and "status_update" to "Denied by AI". Provide a reason in "AI_COMMENT".
+      Task 1: Safety & Authenticity. Check the image. If it is offensive, a meme, a stock photo, clearly AI-generated, or completely unrelated to a plausible campus maintenance issue, set "is_fake" to true and "status_update" to "Denied by AI". Provide a reason in "AI_COMMENT".
 
       Task 2: Deduplication. Compare the new issue's image and description to the 'Nearby Issues' list. If it reports the exact same physical item (e.g., the same broken window, not just another broken window), set "is_duplicate" to true and "duplicate_id" to the ID of the original issue.
 
@@ -113,7 +113,7 @@ async function analyzeIssueWithAI(issueId: string, data: IssueData) {
 
       Task 4: Severity. If valid and unique, assign a "priority" from this list: [Critical, High, Medium, Low]. Use 'Critical' only for immediate life-safety risks (e.g., sparking wires, major flooding visible in the image). Base your decision on the visual evidence.
       
-      Return ONLY a JSON object in this format: { "is_spam": boolean, "is_duplicate": boolean, "duplicate_id": string | null, "category": "string", "priority": "string", "AI_COMMENT": "1-sentence summary of findings", "status_update": "Open" | "Denied by AI" }
+      Return ONLY a JSON object in this format: { "is_fake": boolean, "is_duplicate": boolean, "duplicate_id": string | null, "category": "string", "priority": "string", "AI_COMMENT": "1-sentence summary of findings", "status_update": "Open" | "Denied by AI" }
     `;
     console.log('[AI_DEBUG] Constructed Prompt:', prompt);
 
@@ -141,11 +141,11 @@ async function analyzeIssueWithAI(issueId: string, data: IssueData) {
     console.log('[AI_STEP] 4. Processing AI result and updating Firestore...');
     const issueRef = doc(firestore, 'issues', issueId);
 
-    if (aiResult.is_spam || aiResult.status_update === 'Denied by AI') {
-      console.log('[AI_DECISION] Issue flagged as SPAM or Denied by AI.');
+    if (aiResult.is_fake || aiResult.status_update === 'Denied by AI') {
+      console.log('[AI_DECISION] Issue flagged as FAKE or Denied by AI.');
       await updateDoc(issueRef, {  
         currentStatus: 'Denied by AI',
-        is_spam: true,
+        is_fake: true,
         AI_COMMENT: aiResult.AI_COMMENT,
         AI: 1,
       });
@@ -175,7 +175,7 @@ async function analyzeIssueWithAI(issueId: string, data: IssueData) {
             console.log(`[AI_DEBUG] Original issue has frequency ${originalData.frequency}. New frequency: ${newFrequency}`);
             
             transaction.update(issueRef, {
-                is_spam: true, // Mark as duplicate
+                is_duplicate: true, // Mark as duplicate
                 merged_into: aiResult.duplicate_id,
                 AI_COMMENT: aiResult.AI_COMMENT,
                 AI: 1,
@@ -263,7 +263,7 @@ export async function handleIssueSubmission(
           updatedAt: null,
           admin_comments: '',
           merged_into: null,
-          is_spam: false,
+          is_fake: false,
           AI_COMMENT: '',
           AI: 0, // Mark as pending AI analysis
           is_duplicate: false,

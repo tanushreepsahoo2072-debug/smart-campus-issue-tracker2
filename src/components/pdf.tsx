@@ -120,7 +120,7 @@ export const generateComplaintPDF = (complaint: Complaint) => {
 
   <h3>AI Analysis</h3>
 
-  <div class="row"><span class="label">Is Spam:</span><span class="value">${complaint.is_spam ? 'Yes' : 'No'}</span></div>
+  <div class="row"><span class="label">Is Fake:</span><span class="value">${complaint.is_fake ? 'Yes' : 'No'}</span></div>
   <div class="row"><span class="label">AI Comment:</span><span class="value">${complaint.AI_COMMENT || '-'}</span></div>
 
   <hr />

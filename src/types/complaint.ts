@@ -16,8 +16,8 @@ export type Complaint = {
   timestamp: Timestamp | string; // Can be a server timestamp on write, string on read
   frequency: number;
   createdAt: string // ISO string
-  updatedAt:  string; // ISO string
-  is_spam: boolean;
+  updatedAt:string | null | undefined ; // ISO string
+  is_fake: boolean;
   AI: number; // 0: pending, 1: complete, -1: error
   AI_COMMENT: string;
   merged_into: string | null;
@@ -40,8 +40,8 @@ export type Issue = {
   timestamp: Timestamp | string; // Can be a server timestamp on write, string on read
   frequency: number;
   createdAt: string // ISO string
-  updatedAt:  string; // ISO string
-  is_spam: boolean;
+  updatedAt:string | null | undefined // ISO string
+  is_fake: boolean;
   AI: number; // 0: pending, 1: complete, -1: error
   AI_COMMENT: string;
   merged_into: string | null;

@@ -40,7 +40,7 @@ export default function SimilarComplaints({ issueId }: SimilarComplaintsProps) {
     try {
       const q = query(
         collection(firestore, 'issues'),
-        where('is_spam', '==', true),
+        where('is_duplicate', '==', true),
         where('merged_into', '==', issueId)
       );
 

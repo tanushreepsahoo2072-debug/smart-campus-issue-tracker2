@@ -4,6 +4,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Issue, IssueCategory, AIPriority } from '@/types/complaint';
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
@@ -111,28 +112,77 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
     );
   }, [issue, newStatus, adminComments, newCategory, newPriority]);
 
+  const fetchMergedDuplicateIssueIds = async (issueId: string): Promise<string[]> => {
+    if (!firestore || !issueId) return[];
+    
+    try {
+    const q = query(
+      collection(firestore, 'issues'),
+      where('is_duplicate', '==', true),
+      where('merged_into', '==', issueId)
+    );
+  
+    const snapshot = await getDocs(q);
+  
+    const ids: string[] = [];
+    snapshot.forEach(doc => {
+      ids.push(doc.id);
+    });
+  
+    return ids;
+  } catch (error) {
+    console.error('Error fetching merged duplicate issue IDs:', error);
+    return [];
+  }
+}
+
+  
+
   const handleUpdate = async () => {
     if (!firestore || !issue || !newStatus) return;
-
+  
     setIsUpdating(true);
+  
     try {
-      const docRef = doc(firestore, 'issues', issue.id);
-      await updateDoc(docRef, {
-        currentStatus: newStatus,
-        admin_comments: adminComments,
-        category: newCategory,
-        ai_priority: newPriority,
-        updatedAt: serverTimestamp(),
-        AI: 2
+      // 1️⃣ Fetch merged duplicate issue IDs
+      const mergedDuplicateIds = await fetchMergedDuplicateIssueIds(issue.id);
+      console.log(mergedDuplicateIds)
+  
+      // 2️⃣ Create final array of issue IDs to update
+      const issueIdsToUpdate = [issue.id, ...mergedDuplicateIds];
+  
+      // 3️⃣ Update ALL issues
+      const updatePromises = issueIdsToUpdate.map(issueId => {
+        const docRef = doc(firestore, 'issues', issueId);
+        return updateDoc(docRef, {
+          currentStatus: newStatus,
+          admin_comments: adminComments,
+          category: newCategory,
+          ai_priority: newPriority,
+          updatedAt: serverTimestamp(),
+          AI: 2
+        });
       });
-      toast({ title: 'Success', description: 'Issue has been updated.' });
+  
+      await Promise.all(updatePromises);
+  
+      toast({
+        title: 'Success',
+        description: `Updated ${issueIdsToUpdate.length} related issues.`,
+      });
+  
     } catch (error) {
-      console.error('Error updating issue:', error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update issue.' });
+      console.error('Error updating issues:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update related issues.',
+      });
     } finally {
       setIsUpdating(false);
     }
   };
+  
 
   const handleMarkAsNotSimilar = async () => {
     if (!firestore || !issueId) return;
@@ -140,7 +190,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
     try {
         const docRef = doc(firestore, 'issues', issueId);
         await updateDoc(docRef, {
-            is_spam: false,
+            is_duplicate: false,
             merged_into: null,
             AI_COMMENT: `Manually marked as not a duplicate by authority. Original AI comment: ${issue?.AI_COMMENT || ''}`,
             updatedAt: serverTimestamp(),
@@ -190,7 +240,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   const googleMapsUrl = issue ? `https://www.google.com/maps?q=${issue.latitude},${issue.longitude}` : '';
 
   return (
-    <div className="container mx-auto max-w-5xl py-8 px-4 md:px-6">
+    <div className="container mx-auto max-w-5xl py-8">
        <div className="mb-6">
         <Button asChild variant="outline" size="sm">
           <Link href="/authority/dashboard">
