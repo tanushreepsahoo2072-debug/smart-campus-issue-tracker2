@@ -232,7 +232,7 @@ export default function TrackStatusPage() {
   
 
   return (
-    <div className="container mx-auto max-w-2xl py-8">
+    <div className="container mx-auto max-w-2xl px-4 py-8 md:px-6">
       <div className="mb-8 text-center ">
         <h1 className="text-3xl font-bold tracking-tight">Track Complaint</h1>
         <p className="mt-2 text-muted-foreground">

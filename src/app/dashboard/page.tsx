@@ -5,7 +5,7 @@ import { FilePlus2, Search } from 'lucide-react';
 export default function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col">
-      <section className="container flex flex-col items-center justify-center gap-6 py-8 md:py-12">
+      <section className="container flex flex-col items-center justify-center gap-6 px-4 py-8 md:py-12">
         <div className="mx-auto flex flex-col items-center gap-4 text-center">
           <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:text-6xl">
             Dashboard

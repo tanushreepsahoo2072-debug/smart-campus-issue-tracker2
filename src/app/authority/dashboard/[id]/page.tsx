@@ -190,7 +190,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   const googleMapsUrl = issue ? `https://www.google.com/maps?q=${issue.latitude},${issue.longitude}` : '';
 
   return (
-    <div className="container mx-auto max-w-5xl py-8">
+    <div className="container mx-auto max-w-5xl py-8 px-4 md:px-6">
        <div className="mb-6">
         <Button asChild variant="outline" size="sm">
           <Link href="/authority/dashboard">

@@ -25,7 +25,7 @@ export default function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-sm rounded-2xl shadow-lg">
+    <Card className="w-full max-w-sm rounded-2xl shadow-lg mx-4 md:mx-0">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Welcome to Campus Connect</CardTitle>
         <CardDescription>Select your role to continue</CardDescription>

@@ -84,7 +84,7 @@ export default function AuthorityLoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md shadow-md rounded-lg">
+    <Card className="w-full max-w-md shadow-md rounded-lg mx-4 md:mx-0">
       <CardHeader>
         <CardTitle className="text-2xl">Authority Login</CardTitle>
         <CardDescription>Please enter your credentials to access the authority dashboard.</CardDescription>
