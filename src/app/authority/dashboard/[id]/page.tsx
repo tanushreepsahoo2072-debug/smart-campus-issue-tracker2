@@ -123,6 +123,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
         category: newCategory,
         ai_priority: newPriority,
         updatedAt: serverTimestamp(),
+        AI: 2
       });
       toast({ title: 'Success', description: 'Issue has been updated.' });
     } catch (error) {
