@@ -27,13 +27,13 @@ export default function LoginForm() {
   return (
     <Card className="w-full max-w-sm rounded-2xl shadow-lg">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Welcome to CivicConnect</CardTitle>
+        <CardTitle className="text-2xl">Welcome to Campus Connect</CardTitle>
         <CardDescription>Select your role to continue</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
         <div className="flex items-center justify-center space-x-4">
           <Label htmlFor="role-switch" className={role === 'citizen' ? 'text-primary' : 'text-muted-foreground'}>
-            Citizen
+            User
           </Label>
           <Switch
             id="role-switch"

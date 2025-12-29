@@ -97,6 +97,7 @@ export const generateComplaintPDF = (complaint: Complaint) => {
   <div class="row"><span class="label">Title:</span><span class="value">${complaint.title}</span></div>
   <div class="row"><span class="label">Description:</span><span class="value">${complaint.description}</span></div>
 
+  <div class="row"><span class="label">Priority:</span><span class="value">${complaint.ai_priority}</span></div>
   <div class="row"><span class="label">Category:</span><span class="value">${complaint.category}</span></div>
   <div class="row"><span class="label">Current Status:</span><span class="value">${complaint.currentStatus}</span></div>
   <div class="row"><span class="label">Assigned To:</span><span class="value">${complaint.assignedTo || '-'}</span></div>
@@ -119,7 +120,6 @@ export const generateComplaintPDF = (complaint: Complaint) => {
 
   <h3>AI Analysis</h3>
 
-  <div class="row"><span class="label">AI Priority:</span><span class="value">${complaint.ai_priority}</span></div>
   <div class="row"><span class="label">Is Spam:</span><span class="value">${complaint.is_spam ? 'Yes' : 'No'}</span></div>
   <div class="row"><span class="label">AI Comment:</span><span class="value">${complaint.AI_COMMENT || '-'}</span></div>
 

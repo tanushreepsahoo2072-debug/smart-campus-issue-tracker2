@@ -28,7 +28,6 @@ export default function Header() {
     return "/dashboard";
   }
 
-  const showDashboardButton = user && !pathname.startsWith('/dashboard') && !pathname.startsWith('/authority/dashboard');
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -36,19 +35,12 @@ export default function Header() {
         <div className="mr-4 flex">
           <Link href={getDashboardHref()} className="mr-6 flex items-center space-x-2">
             <Megaphone className="h-6 w-6 text-primary" />
-            <span className="font-bold sm:inline-block">CivicConnect</span>
+            <span className="font-bold sm:inline-block">Campus Connect</span>
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {!loading && user && (
             <>
-              {showDashboardButton && (
-                <Button asChild variant="ghost">
-                  <Link href={getDashboardHref()}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-                  </Link>
-                </Button>
-              )}
               <Button onClick={handleSignOut} variant="ghost">
                 <LogOut className="mr-2 h-4 w-4" /> Sign Out
               </Button>

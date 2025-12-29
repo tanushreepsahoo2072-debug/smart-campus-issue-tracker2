@@ -6,7 +6,7 @@ export default function LodgeComplaintPage() {
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold tracking-tight">Lodge a New Complaint</h1>
         <p className="mt-2 text-muted-foreground">
-          Fill out the form below to report an issue in your community.
+          Fill out the form below to report an issue in your campus.
         </p>
       </div>
       <IssueForm />

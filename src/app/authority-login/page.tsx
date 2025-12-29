@@ -1,5 +1,4 @@
 import AuthorityLoginForm from '@/components/authority-login-form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AuthorityLoginPage() {
   return (

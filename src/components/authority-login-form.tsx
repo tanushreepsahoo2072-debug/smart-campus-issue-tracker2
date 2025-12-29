@@ -49,6 +49,7 @@ export default function AuthorityLoginForm() {
       // 1. Authenticate the user
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
+      console.log(user)
 
       // 2. Fetch the user's document from Firestore
       const userDocRef = doc(firestore, 'users', user.uid);
