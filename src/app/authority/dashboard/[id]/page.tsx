@@ -69,6 +69,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
   const [adminComments, setAdminComments] = useState('');
   const [newCategory, setNewCategory] = useState<IssueCategory | ''>('');
   const [newPriority, setNewPriority] = useState<AIPriority | 'Not-Assigned'>('Not-Assigned');
+  const [assignedTo, setAssignedTo] = useState('');
 
   useEffect(() => {
     if (!firestore || !issueId) return;
@@ -107,10 +108,11 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
     return (
       newStatus !== issue.currentStatus ||
       adminComments !== (issue.admin_comments || '') ||
+      assignedTo !== (issue.assignedTo || '') ||
       newCategory !== (issue.category || '') ||
       newPriority !== (issue.ai_priority || 'Not-Assigned')
     );
-  }, [issue, newStatus, adminComments, newCategory, newPriority]);
+  }, [issue, newStatus, adminComments, newCategory, newPriority, assignedTo]);
 
   const fetchMergedDuplicateIssueIds = async (issueId: string): Promise<string[]> => {
     if (!firestore || !issueId) return[];
@@ -146,7 +148,7 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
     try {
       // 1️⃣ Fetch merged duplicate issue IDs
       const mergedDuplicateIds = await fetchMergedDuplicateIssueIds(issue.id);
-      console.log(mergedDuplicateIds)
+      
   
       // 2️⃣ Create final array of issue IDs to update
       const issueIdsToUpdate = [issue.id, ...mergedDuplicateIds];
@@ -160,7 +162,8 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
           category: newCategory,
           ai_priority: newPriority,
           updatedAt: serverTimestamp(),
-          AI: 2
+          AI: 2,
+          assignedTo:assignedTo,
         });
       });
   
@@ -329,17 +332,36 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                          </div>
                     </div>
                     
-                    {issue.admin_comments && (
-                        <div className="mt-6 space-y-2 rounded-lg border bg-muted/50 p-4">
-                            <p className="text-sm font-semibold">Admin Feedback</p>
-                            <p className="whitespace-pre-wrap text-muted-foreground">{issue.admin_comments}</p>
-                            {issue.updatedAt && (
-                                <p className="pt-2 text-xs text-muted-foreground/80">
-                                    Updated {formatDistanceToNow(new Date(issue.updatedAt), { addSuffix: true })}
-                                </p>
-                            )}
-                        </div>
-                    )}
+        {(issue.admin_comments || issue.assignedTo) && (
+  <div className="mt-6 space-y-3 rounded-lg border bg-muted/50 p-4">
+    <p className="text-sm font-semibold">Admin Feedback</p>
+
+    {issue.assignedTo && (
+      <div className="text-sm">
+        <span className="font-medium text-muted-foreground">Assigned To:</span>
+        <p className="mt-1 whitespace-pre-wrap font-semibold text-foreground">
+          {issue.assignedTo}
+        </p>
+      </div>
+    )}
+
+    {issue.admin_comments && (
+      <div className="text-sm">
+        <span className="font-medium text-muted-foreground">Comments:</span>
+        <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+          {issue.admin_comments}
+        </p>
+      </div>
+    )}
+
+    {issue.updatedAt && (
+      <p className="pt-2 text-xs text-muted-foreground/80">
+        Updated {formatDistanceToNow(new Date(issue.updatedAt), { addSuffix: true })}
+      </p>
+    )}
+  </div>
+)}
+
 
                 </CardContent>
                  <CardFooter className="bg-muted/50 p-4">
@@ -412,6 +434,17 @@ export default function IssuePage({ params: paramsProp }: { params: { id: string
                           );
                         })}
                       </div>
+                    </div>
+                     
+                    <div className="space-y-2">
+                       <label className="text-sm font-medium">Assigned To</label>
+                       <Textarea
+                          placeholder="Assign this issue to a person or team..."
+                          value={assignedTo}
+                          onChange={(e) => setAssignedTo(e.target.value)}
+                          className={cn("min-h-[40px] max-h-[40px] ", assignedTo !== (issue.assignedTo || '') && 'ring-2 ring-accent')}
+                          disabled={isUpdating}
+                       />
                     </div>
 
 
