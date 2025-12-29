@@ -79,18 +79,6 @@ export const generateComplaintPDF = (complaint: Complaint) => {
     <h2>Smart Campus Issue Report</h2>
   </div>
 
-  <div class="row">
-    <span class="label">Uploaded Images:</span>
-    <span class="value images">
-      ${(complaint.imageUrls || [])
-        .map(
-          (url) =>
-            `<img src="${url}" crossorigin="anonymous" />`
-        )
-        .join('')}
-    </span>
-  </div>
-
   <hr />
 
   <div class="row"><span class="label">Complaint ID:</span><span class="value">${complaint.id}</span></div>

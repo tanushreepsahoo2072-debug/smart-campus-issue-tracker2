@@ -206,7 +206,7 @@ export default function IssueForm() {
 
       // Step 3: Convert images to data URIs for AI analysis
       const imageDataUris = await Promise.all(filesToUpload.map(fileToDataUri));
-
+      console.log(imageDataUris)
       // Step 4: Update the issue document with the image URLs and trigger AI analysis
       if (firestore) {
           const issueRef = doc(firestore, 'issues', issueId);
